@@ -1,0 +1,36 @@
+
+apply plugin: 'lucasway-migrations'
+apply plugin: 'java'
+
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath group: 'com.ni', name: 'lucasway', version: '0.0.1-SNAPSHOT'
+    }
+
+}
+
+lucasway {
+    url="jdbc:postgresql://localhost:5433/lucasway"
+    driver="org.postgresql.Driver"
+    username="niuser"
+    password="nipass"
+    
+    auditing=true
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+   sql group:"postgresql", name:"postgresql", version:"9.1-901-1.jdbc4"
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = "1.8-rc-1"
+}
