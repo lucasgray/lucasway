@@ -1,6 +1,7 @@
 package com.ni.lucasway.functions
 
-import org.slf4j.Logger;
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import com.ni.lucasway.model.SqlDependency
 
@@ -10,7 +11,7 @@ import com.ni.lucasway.model.SqlDependency
  */
 class DependencyGraph {
 	
-	Logger LOG = LoggerFactory.getLogger(DependencyGraph.class)
+	static Logger LOG = LoggerFactory.getLogger(DependencyGraph.class)
 	
 	static Set<SqlDependency> createGraph(Map<String,List<SqlDependency>> deps, List<SqlDependency> versions) {
 		

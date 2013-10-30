@@ -1,11 +1,8 @@
 package com.ni.lucasway.model
 
-import groovy.transform.Canonical
-
 /**
  * Sql Dependency Node in a Directed Acyclic Graph 
  */
-@Canonical
 class SqlDependency {
 	
 	List<SqlDependency> parents = []
@@ -44,4 +41,5 @@ class SqlDependency {
 			}
 		}
 	}
+	
 }

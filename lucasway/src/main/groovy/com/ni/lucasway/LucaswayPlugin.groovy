@@ -122,7 +122,7 @@ class LucaswayPlugin implements Plugin<Project> {
 			functionParents.each {it.prettyPrint()}
 			println ""
 			
-			println ""
+			println "--------------------------------------------------------"
 			println "--------------------------------------------------------"
 			println ""
 			
