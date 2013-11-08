@@ -100,7 +100,8 @@ Three steps: apply the plugin, denote the sql dependency needed to run the migra
 
 Functions are tracked uniquely via their file name.  A good practice is naming the file the exact same as the function.  The file MUST be idempotent for your database of choice, meaning, it should be able to run over and over independently.  For postgres, this means the first line should be DROP FUNCTION foo or CREATE OR REPLACE FUNCTION foo.
 
-_increment.sql_
+__increment.sql__
+
     CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$
         BEGIN
                 RETURN i + 1;
@@ -114,7 +115,8 @@ Tables are tracked via a block of meta information, then the sql to perform the 
 Table migrations can also be used to perform oneoff data migrations into those tables, as shown in the example.  Table migrations can pull in functions they depend on to be run first.
 
 
-_user.sql_
+__user.sql__
+
     -----------------------------------
     --entity:user
     --dependsOn:[new_adhoc_user_load_function.sql]
