@@ -30,25 +30,25 @@ lucasway is designed as a gradle plugin.  Simply add the plugin to your project 
 
     /src
     ----/main
-    -----------/sql
-    ---------------/tables
-    -----------------------/users
-    -------------------------------user.sql
-    -------------------------------user_company.sql
-    -------------------------------company.sql
-    ---------------/functions
-    -----------------------/common
-    -------------------------------unix_timestamp_to_pg_timestamp.sql
-    -------------------------------increment.sql
-    -----------------------/user
-    -------------------------------load_user.sql
-    ---------------/triggers
-    -----------------------sample_trigger.sql
-    ---------------/views
-    -----------------------sample_view.sql
-    ---------------/misc
-    -----------------------create_a_schema.sql
-    -----------------------do_a_barrel_roll.sql
+    --------/sql
+    ------------/tables
+    ----------------/users
+    --------------------user.sql
+    --------------------user_company.sql
+    --------------------company.sql
+    ----------------/functions
+    --------------------/common
+    ------------------------unix_timestamp_to_pg_timestamp.sql
+    ------------------------increment.sql
+    --------------------/user
+    ------------------------load_user.sql
+    ----------------/triggers
+    --------------------sample_trigger.sql
+    ----------------/views
+    --------------------sample_view.sql
+    ----------------/misc
+    --------------------create_a_schema.sql
+    --------------------do_a_barrel_roll.sql
 
 lucasway treats all files under /src/main/sql as your migration resources.  Every file under /src/main/sql/tables is treated as versioned migrations and will be tracked like usual.  Files under /src/main/sql/* otherwise not in the tables folder are treated as code and will be applied to the target database every time lucaswayMigrate runs.
 
@@ -62,15 +62,14 @@ Three steps: apply the plugin, denote the sql dependency needed to run the migra
     apply plugin: 'java'
 
     buildscript {
-                repositories {
-                mavenLocal()
-                mavenCentral()
+        repositories {
+            mavenLocal()
+            mavenCentral()
         }
 
         dependencies {
             classpath group: 'com.ni', name: 'lucasway', version: '0.0.1-SNAPSHOT'
         }
-
     }
 
     lucasway {
@@ -101,8 +100,7 @@ Three steps: apply the plugin, denote the sql dependency needed to run the migra
 
 Functions are tracked uniquely via their file name.  A good practice is naming the file the exact same as the function.  The file MUST be idempotent for your database of choice, meaning, it should be able to run over and over independently.  For postgres, this means the first line should be DROP FUNCTION foo or CREATE OR REPLACE FUNCTION foo.
 
-
-    increment.sql
+_increment.sql_
     CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$
         BEGIN
                 RETURN i + 1;
@@ -115,8 +113,8 @@ Tables are tracked via a block of meta information, then the sql to perform the 
 
 Table migrations can also be used to perform oneoff data migrations into those tables, as shown in the example.  Table migrations can pull in functions they depend on to be run first.
 
-    -------------------------------------
-    user.sql
+
+_user.sql_
     -----------------------------------
     --entity:user
     --dependsOn:[new_adhoc_user_load_function.sql]
@@ -148,7 +146,7 @@ Table migrations can also be used to perform oneoff data migrations into those t
 
 lucasway inspects all table and function files, then runs top level table migrations (and any functions they depend on first).  It marks each as run as it runs them.  If any fail, the migrations up to that point succeed and do not roll back.
 
-Auditing can be turned on or off.  If on, it will record who ran migrations when, and a snapshot of svn st at that time (note that this is very environment specific..)
+Auditing can be turned on or off.  If on, it will record who ran migrations when, and a snapshot of svn st at that time (note that this is very environment specific - if you're not running on svn, you should probably turn auditing off)
 
 
 
