@@ -1,0 +1,34 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+group='com.ni'
+version='0.0.1-SNAPSHOT'
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = "1.8-rc-1"
+}
+
+
+uploadArchives {
+	repositories.mavenDeployer {
+  
+	  repository(url: 'scrub') {
+		authentication(userName: 'scrub', password: 'scrub')
+  
+  
+		pom.version = "1.0.0-SNAPSHOT"
+		pom.artifactId = "lucasway"
+		pom.groupId = "com.ni"
+	  }
+	}
+  }
