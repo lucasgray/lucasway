@@ -7,7 +7,7 @@ repositories {
 }
 
 group='com.ni'
-version='0.0.1-SNAPSHOT'
+version='0.1'
 
 dependencies {
     compile gradleApi()
@@ -20,15 +20,7 @@ task wrapper(type: Wrapper) {
 
 
 uploadArchives {
-	repositories.mavenDeployer {
-  
-	  repository(url: 'scrub') {
-		authentication(userName: 'scrub', password: 'scrub')
-  
-  
-		pom.version = "1.0.0-SNAPSHOT"
-		pom.artifactId = "lucasway"
-		pom.groupId = "com.ni"
-	  }
-	}
-  }
+    repositories.mavenDeployer {
+        repository(url: "file:///Users/lgray/Documents/projects/gitstuff/maven-repository")
+    }
+}

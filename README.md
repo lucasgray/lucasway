@@ -54,45 +54,37 @@ lucasway treats all files under /src/main/sql as your migration resources.  Ever
 
 ##How to add it to your project
 
-//TODO need to add a maven repo to this github... note for self http://downright-amazed.blogspot.com/2011/09/hosting-maven-repository-on-github-for.html
-
-Three steps: apply the plugin, denote the sql dependency needed to run the migrations, then configure the lucasway block.
-
-    apply plugin: 'lucasway-migrations'
-    apply plugin: 'java'
+####Add lucasway's maven repo and plugin artifact to your build script
 
     buildscript {
         repositories {
-            mavenLocal()
-            mavenCentral()
+            maven { url "https://github.com/lucasgray/maven-repository/raw/master/" }
         }
-
+        
         dependencies {
-            classpath group: 'com.ni', name: 'lucasway', version: '0.0.1-SNAPSHOT'
+            classpath group: 'com.ni', name: 'lucasway', version: '0.1'
         }
     }
+    
+####Apply the plugin
+
+    apply plugin: 'lucasway-migrations'
+    
+####Denote the sql dependency needed to run the migrations
+
+    dependencies {
+        sql group:"postgresql", name:"postgresql", version:"9.1-901-1.jdbc4"
+    }
+    
+####Configure lucasway
 
     lucasway {
         url="jdbc:postgresql://localhost:5432/lucasway"
         driver="org.postgresql.Driver"
         username="user"
         password="pass"
-    
         auditing=true
     }
-    
-    repositories {
-        mavenCentral()
-    }
-    
-    dependencies {
-       sql group:"postgresql", name:"postgresql", version:"9.1-901-1.jdbc4"
-    }
-    
-    task wrapper(type: Wrapper) {
-      gradleVersion = "1.8-rc-1"
-    }
-
 
 ##How to structure your files
 
