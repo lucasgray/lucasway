@@ -4,7 +4,7 @@ import groovy.sql.Sql
 
 class SqlMaker {
     
-    static Sql byProperties(Map properties) {
+    def static byProperties(Map properties) {
 		
 		return {
 			SqlMaker.makeSql(
@@ -16,7 +16,7 @@ class SqlMaker {
 
     static Sql makeSql(String url, String driver, String username, String password) {
 
-        return Sql.newInstance(driver:driver,url:url,user:username,password:password)
+        return Sql.newInstance(driver:driver, url:url, user:username, password:password)
     }
 	
 	static void loadClasspathWithSqlDriver(project) {

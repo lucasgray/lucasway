@@ -11,6 +11,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import com.ni.lucasway.db.MigrationRunner
+import com.ni.lucasway.db.SqlMaker
 import com.ni.lucasway.db.testing.DatasetDrivenFunctionTestRunner
 import com.ni.lucasway.db.testing.TestResultAggregator
 
@@ -23,6 +24,8 @@ class LucaswayPlugin implements Plugin<Project> {
 	Logger LOG = LoggerFactory.getLogger(LucaswayPlugin.class)
 	
 	void apply(Project project) {
+		
+		SqlMaker.loadClasspathWithSqlDriver(project)
 
 		project.extensions.create("lucasway", LucaswayPluginExtension)
 
@@ -33,7 +36,7 @@ class LucaswayPlugin implements Plugin<Project> {
 			println "use V"+df.format(new Date())
 		}
 
-		project.test << {
+		project.task('test') << {
 			println ""
 			println "--------------------------------------------------------"
 			println "Lucasway: Testing Migrations"
@@ -45,10 +48,10 @@ class LucaswayPlugin implements Plugin<Project> {
 			println "\tTest Sql File Base: ${project.lucasway.sqlFiles}"
 			println ""
 
-		    def migrationRunner = new MigrationRunner(project: project, sqlSource: sqlByProperties(project.lucasway.test))
+		    def migrationRunner = new MigrationRunner(project: project, sqlSource: SqlMaker.byProperties(project.lucasway.test))
 		    migrationRunner.run()
 
-		    def testSuiteRunner = new DatasetDrivenFunctionTestRunner(sqlSource: sqlByProperties(project.lucasway.test))
+		    def testSuiteRunner = new DatasetDrivenFunctionTestRunner(sqlSource: SqlMaker.byProperties(project.lucasway.test))
 		    def testResults = new TestResultAggregator()
 		    testSuiteRunner.run(testResults.asNotifier())
 		    testResults.reportResults()
@@ -71,13 +74,11 @@ class LucaswayPlugin implements Plugin<Project> {
 			println "\tSql File Base: ${project.lucasway.sqlFiles}"
 			println ""
 			
-			SqlMaker.loadClasspathWithSqlDriver(project)
-
 			new MigrationRunner(sqlSource: SqlMaker.byProperties(project.lucasway)).run()
 			runFunctionTests(testSql)
 		}
 
-		project.lucaswayMigrate.dependsOn project.test
+		project.getTasks().getByName('lucaswayMigrate').dependsOn(project.getTasks().getByName('test'))
 	}
 }
 
