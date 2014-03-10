@@ -11,12 +11,15 @@ import org.dbunit.dataset.xml.FlatXmlDataSet
 
 import org.junit.Assert
 
+import org.junit.runner.Description
+
 /**
  * A test case to call a function and assert its results
  */
-public class DatasetDrivenFunctionTestCase
+public class DatasetDrivenFunctionTestCase implements Runnable
 {
 	def functionName
+	def configDir
 	def name
 
 	/**
@@ -26,16 +29,23 @@ public class DatasetDrivenFunctionTestCase
 	def parameters
 	def expectedOutput
 
+	def jdbcConnection
+
 	/**
 	 * @param configDir has files the define the setup and result assertions of the test
 	 */
 	public DatasetDrivenFunctionTestCase(functionName, configDir)
 	{
 		this.functionName = functionName
-		this.name = configDir.name
+		this.configDir = configDir
+		name = configDir.name
 		preDataSet = new FlatXmlDataSet(new FileInputStream(new File(configDir, 'dataset.xml')))
 		parameters = readFunctionParameters(new FileInputStream(new File(configDir, 'params.json')))
 		expectedOutput = readExpectedOutput(new FileInputStream(new File(configDir, 'expected-results.json')))
+	}
+
+	def copyOf() {
+		return new DatasetDrivenFunctionTestCase(functionName, configDir)
 	}
 
 	def readFunctionParameters(confInputStream) {
@@ -46,18 +56,24 @@ public class DatasetDrivenFunctionTestCase
 		return new JsonSlurper().parse(new InputStreamReader(confOutputStream))
 	}
 
-	def run(jdbcConnection) {
-		setupDataSet(jdbcConnection)
-		callAndTestFunction(jdbcConnection, matchResultSetToExpectedOutput)
+	@Override
+	public void run()
+	{
+		setupDataSet()
+		callAndTestFunction(matchResultSetToExpectedOutput)
 	}
 
-	def setupDataSet(jdbcConnection) {
+	def getDescription() {
+		Description.createSuiteDescription(name, getClass())
+	}
+
+	def setupDataSet() {
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
 		new DeleteAllOperation().execute(dbunitConnection, preDataSet)
 		new InsertOperation().execute(dbunitConnection, preDataSet)
 	}
 
-	def callAndTestFunction(jdbcConnection, assertResultSet)
+	def callAndTestFunction(assertResultSet)
 	{
 		def functionCall = null
 		def functionResultSet = null
@@ -85,8 +101,10 @@ public class DatasetDrivenFunctionTestCase
 	}
 
 	def matchResultSetToExpectedOutput = { resultSet ->
+
 		def numResultSetRows = 0
 		expectedOutput.each { expectedRow ->
+			
 			def hasMatchingResultRow = resultSet.next()
 			Assert.assertTrue("Function output # rows is incorrect: # rows found was ${numResultSetRows}", hasMatchingResultRow)
 			numResultSetRows++

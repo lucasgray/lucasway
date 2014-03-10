@@ -1,21 +1,30 @@
 package com.ni.lucasway.db.testing
 
+import java.text.DecimalFormat
+
 import org.junit.runner.Description
+import org.junit.runner.Result
 import org.junit.runner.notification.Failure
 import org.junit.runner.notification.RunListener
 import org.junit.runner.notification.RunNotifier
 
 public class TestResultAggregator extends RunListener
 {
+	protected static def DURATION_IN_SEC_FORMAT = new DecimalFormat('0.000')
+
 	protected def startTime, endTime
-	def duration { endTime - startTime }
+	def duration = { endTime - startTime }
+
+	protected def pending = []
 
 	def allTests = []
-	def successes = []
-	def skipped = []
+	def successful = []
+	def ignored = [] // aka skipped
 	def failures = []
-	def assertionFailures = { failures.retainAll{ it.exception instanceof AssertionError } }
-	def nonAssertionFailures = { failures.retainAll{ ! (it.exception instanceof AssertionError) } }
+	def assertionFailures = { failures.findAll{ it.exception instanceof AssertionError } }
+	def nonAssertionFailures = { failures.findAll{ ! (it.exception instanceof AssertionError) } }
+
+	public int countPendingTests() { return pending.size() }
 
 	@Override
 	public void testRunStarted(Description description) throws Exception {
@@ -28,18 +37,38 @@ public class TestResultAggregator extends RunListener
     	endTime = System.currentTimeMillis()
     }
 
+    @Override
+    public void testStarted(Description someTest) throws Exception {
+    	allTests += someTest
+    	pending += someTest
+    }
+
 	@Override
-	public void testFinished(Description success) throws Exception {
-		successes += success
+	public void testFinished(Description successfulTest) throws Exception {
+		if (pending.remove(successfulTest)) {
+			successful += successfulTest
+		}
 	}
 
 	@Override
 	public void testFailure(Failure failure) throws Exception {
-		failures += failure
+		if (pending.remove(failure.description)) {
+			failures += failure
+		}
 	}
 
-	protected def printDuration() {
+	@Override
+	public void testIgnored(Description ignoredTest) throws Exception {
+		if (pending.remove(ignoredTest)) {
+			ignored += ignoredTest
+		}
+	}
 
+	protected def printDurationInSeconds()
+	{
+		def durationInMilliseconds = duration()
+		def durationInSeconds = (double) durationInMilliseconds / 1000.0D
+		return DURATION_IN_SEC_FORMAT.format(durationInSeconds)
 	}
 
 	public RunNotifier asNotifier()
@@ -51,8 +80,11 @@ public class TestResultAggregator extends RunListener
 
 	public void reportResults()
 	{
+		if (failures.size() > 0) {
+			println "FAILURES!!!"
+		}
 		println ""
-		println "Tests run: ${allTests.size()}, Failures: ${assertionFailures.size()}, Errors: ${nonAssertionFailures.size()}, Skipped: ${skipped.size()}, Time elapsed: 2.318 sec"
+		println "Tests run: ${allTests.size()}, Failures: ${assertionFailures().size()}, Errors: ${nonAssertionFailures().size()}, Skipped: ${ignored.size()}, Time elapsed: ${printDurationInSeconds()} sec"
 		println ""
 		println "Results:"
 		println ""

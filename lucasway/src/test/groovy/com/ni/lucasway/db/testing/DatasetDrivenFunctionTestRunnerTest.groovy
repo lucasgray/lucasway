@@ -6,20 +6,44 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
+import org.junit.runner.Description
+import org.junit.runner.notification.Failure
+import org.junit.runner.notification.RunListener
 import org.junit.runner.notification.RunNotifier
+
+import com.ni.lucasway.db.SqlMaker
 
 public class DatasetDrivenFunctionTestRunnerTest
 {
 	public static def SQL_FUNCTIONS_BASE_DIR = new File('src/test/resources/db-functions')
 	public static def SQL_FUNCTIONS_TESTS_BASE_DIR = new File('src/test/resources/db-function-tests')
+	public static def TEST_FUNCTION_NAME = '/com/ni/lucasway/db/testing/are_you_mocking_me'
 	public static def TEST_FUNCTION_PATH = '/com/ni/lucasway/db/testing/are_you_mocking_me.sql'
+
+	def static JDBC_CONFIG = ResourceBundle.getBundle('unittest-jdbc')
+
+	def static getSqlSource() {
+		SqlMaker.makeSql(
+			JDBC_CONFIG.getString('url'),
+			JDBC_CONFIG.getString('driver'),
+			JDBC_CONFIG.getString('username'),
+			JDBC_CONFIG.getString('password')
+		)
+	}
+
+	def testedObject
+
+	@Before
+	public void setupTestedObject()
+	{
+		testedObject = new DatasetDrivenFunctionTestRunner(SQL_FUNCTIONS_BASE_DIR, SQL_FUNCTIONS_TESTS_BASE_DIR)
+		testedObject.sqlSource = getSqlSource()
+	}
 
 	@Before
 	public void setupDatabase()
 	{
-		def config = ResourceBundle.getBundle('application')
-    	def sqlHandle = Sql.newInstance(config.getString('jdbc.url.socialsense'), config.getString('jdbc.username.socialsense'), config.getString('jdbc.password.socialsense'), config.getString('jdbc.driver.socialsense'))
-    	def jdbcConnection = sqlHandle.createConnection()
+    	def jdbcConnection = getSqlSource().createConnection()
     	def sqlStmtExec = jdbcConnection.createStatement()
     	sqlStmtExec.execute('DROP TABLE IF EXISTS buzzlightyear')
     	sqlStmtExec.execute('CREATE TABLE buzzlightyear (id INTEGER, col1 TEXT, col2 TEXT)')
@@ -29,18 +53,19 @@ public class DatasetDrivenFunctionTestRunnerTest
 	}
 
 	@Test
-	public void testFindFunctions()
+	public void testFindFunctionTests()
 	{
-		def testedObject = new DatasetDrivenFunctionTestRunner(SQL_FUNCTIONS_BASE_DIR, SQL_FUNCTIONS_TESTS_BASE_DIR)
+		testedObject.findFunctionTests()
+
 		Assert.assertEquals(1, testedObject.functionTests.size())
 
-		def testCases = testedObject.functionTests['/com/ni/lucasway/db/testing/are_you_mocking_me']
+		def testCases = testedObject.functionTests[TEST_FUNCTION_NAME]
 		Assert.assertNotNull(testCases)
 		Assert.assertEquals(1, testCases.size())
 
 		def testCase = testCases[0]
 		Assert.assertEquals('are_you_mocking_me', testCase.functionName)
-		Assert.assertEquals('/com/ni/lucasway/db/testing/are_you_mocking_me::main', testCase.name)
+		Assert.assertEquals("${TEST_FUNCTION_NAME}::main".toString(), testCase.name)
 		Assert.assertEquals([ "foo", "boo", 1234, true ], testCase.parameters)
 		Assert.assertEquals(1, testCase.expectedOutput.size())
 		Assert.assertEquals([ 999, "abc", "def" ], testCase.expectedOutput[0])
@@ -49,8 +74,18 @@ public class DatasetDrivenFunctionTestRunnerTest
 	@Test
 	public void testRun()
 	{
-		def notifier = { println "Hello: ${it}" }
-		def testedObject = new DatasetDrivenFunctionTestRunner(SQL_FUNCTIONS_BASE_DIR, SQL_FUNCTIONS_TESTS_BASE_DIR)
-		testedObject.run(notifier as RunNotifier)
+		def testTally = new TestResultAggregator()
+
+		testedObject.findFunctionTests()
+		testedObject.functionTests[TEST_FUNCTION_NAME] += testedObject.functionTests[TEST_FUNCTION_NAME][0].copyOf()
+		testedObject.functionTests[TEST_FUNCTION_NAME][1].expectedOutput[0][2] = "wrench-in-the-test".toString()
+		testedObject.functionTests[TEST_FUNCTION_NAME][1].name = "${TEST_FUNCTION_NAME}::failure".toString()
+		testedObject.run(testTally.asNotifier())
+
+		Assert.assertEquals(1, testTally.successful.size())
+		Assert.assertEquals("${TEST_FUNCTION_NAME}::main".toString(), testTally.successful[0].displayName)
+
+		Assert.assertEquals(1, testTally.failures.size())
+		Assert.assertEquals("${TEST_FUNCTION_NAME}::failure".toString(), testTally.failures[0].description.displayName)
     }
 }

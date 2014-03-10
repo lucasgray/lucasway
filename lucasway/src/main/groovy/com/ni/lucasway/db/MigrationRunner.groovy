@@ -1,5 +1,7 @@
 package com.ni.lucasway.db
 
+import groovy.sql.Sql
+
 import org.gradle.api.file.ConfigurableFileTree
 
 import org.slf4j.Logger
