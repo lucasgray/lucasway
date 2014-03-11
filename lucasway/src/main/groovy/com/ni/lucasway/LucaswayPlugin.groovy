@@ -24,8 +24,6 @@ class LucaswayPlugin implements Plugin<Project> {
 	Logger LOG = LoggerFactory.getLogger(LucaswayPlugin.class)
 	
 	void apply(Project project) {
-		
-		SqlMaker.loadClasspathWithSqlDriver(project)
 
 		project.extensions.create("lucasway", LucaswayPluginExtension)
 
@@ -37,6 +35,8 @@ class LucaswayPlugin implements Plugin<Project> {
 		}
 
 		project.task('test') << {
+			SqlMaker.loadClasspathWithSqlDriver(project)
+			
 			println ""
 			println "--------------------------------------------------------"
 			println "Lucasway: Testing Migrations"
@@ -61,7 +61,6 @@ class LucaswayPlugin implements Plugin<Project> {
 		}
 
 		project.task('lucaswayMigrate') << {
-
 			println ""
 			println "--------------------------------------------------------"
 			println "Lucasway Configuration:"
@@ -74,8 +73,9 @@ class LucaswayPlugin implements Plugin<Project> {
 			println "\tSql File Base: ${project.lucasway.sqlFiles}"
 			println ""
 			
+			SqlMaker.loadClasspathWithSqlDriver(project)
+
 			new MigrationRunner(sqlSource: SqlMaker.byProperties(project.lucasway)).run()
-			runFunctionTests(testSql)
 		}
 
 		project.getTasks().getByName('lucaswayMigrate').dependsOn(project.getTasks().getByName('test'))

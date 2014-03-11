@@ -64,11 +64,15 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	}
 
 	def getDescription() {
-		Description.createSuiteDescription(name, getClass())
+		Description.createTestDescription(getClass(), name)
 	}
 
 	def setupDataSet() {
+		println 'your mom is a whore'
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
+		println "Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
+		dbunitConnection.config.setProperty('http://www.dbunit.org/features/qualifiedTableNames', true)
+		println "After updating config property:Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
 		new DeleteAllOperation().execute(dbunitConnection, preDataSet)
 		new InsertOperation().execute(dbunitConnection, preDataSet)
 	}
@@ -87,8 +91,8 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 			assertResultSet(functionResultSet)
 		}
 		finally {
-			functionCall?.close()
 			functionResultSet?.close()
+			functionCall?.close()
 		}
 	}
 

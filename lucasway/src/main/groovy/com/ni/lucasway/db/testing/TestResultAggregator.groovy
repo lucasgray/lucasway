@@ -92,6 +92,10 @@ public class TestResultAggregator extends RunListener
 		println ""
 		failures.each {
 			println "${it.toString()}"
+			if (it.exception != null) {
+				it.exception.printStackTrace(System.out)
+			}
+			println ""
 		}
 	}
 }

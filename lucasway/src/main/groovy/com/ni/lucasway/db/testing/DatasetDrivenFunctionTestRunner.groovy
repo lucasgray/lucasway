@@ -14,7 +14,7 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 	public static def SQL_FUNCTIONS_BASE_DIR = new File('src/main/sql/functions')
 	public static def SQL_FUNCTIONS_TESTS_BASE_DIR = new File('src/test/sql/functions')
 
-	def Sql sqlSource // LucaswayPlugin or other container will inject this.
+	def sqlSource // LucaswayPlugin or other container will inject this.
 
 	def functionSourceBaseDir
 	def functionTestBaseDir
@@ -88,7 +88,7 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 
     	if (functionTests.isEmpty()) { findFunctionTests() }
 
-    	def jdbcConnection = sqlSource.createConnection()
+    	def jdbcConnection = sqlSource().createConnection()
 
     	try
     	{
