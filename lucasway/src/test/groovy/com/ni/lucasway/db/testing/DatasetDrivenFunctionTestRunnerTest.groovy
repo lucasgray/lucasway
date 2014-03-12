@@ -20,16 +20,9 @@ public class DatasetDrivenFunctionTestRunnerTest
 	public static def TEST_FUNCTION_NAME = '/com/ni/lucasway/db/testing/are_you_mocking_me'
 	public static def TEST_FUNCTION_PATH = '/com/ni/lucasway/db/testing/are_you_mocking_me.sql'
 
-	def static JDBC_CONFIG = ResourceBundle.getBundle('unittest-jdbc')
+	def static JDBC_CONFIG = ResourceBundle.getBundle('migration-jdbc')
 
-	def static sqlSource = {
-		SqlMaker.makeSql(
-			JDBC_CONFIG.getString('url'),
-			JDBC_CONFIG.getString('driver'),
-			JDBC_CONFIG.getString('username'),
-			JDBC_CONFIG.getString('password')
-		)
-	}
+	def static sqlSource = SqlMaker.byBundle(JDBC_CONFIG)
 
 	def testedObject
 
@@ -46,9 +39,8 @@ public class DatasetDrivenFunctionTestRunnerTest
     	def jdbcConnection = sqlSource().createConnection()
     	def sqlStmtExec = jdbcConnection.createStatement()
     	sqlStmtExec.execute('DROP TABLE IF EXISTS buzzlightyear')
-    	sqlStmtExec.execute('CREATE TABLE buzzlightyear (id INTEGER, col1 TEXT, col2 TEXT)')
+    	sqlStmtExec.execute('CREATE TABLE buzzlightyear (id INTEGER, col1 TEXT, col2 TEXT, expiresAt TIMESTAMP)')
     	sqlStmtExec.execute(new File(SQL_FUNCTIONS_BASE_DIR, TEST_FUNCTION_PATH).getText())
-    	sqlStmtExec.executeQuery('select 1 from buzzlightyear')
     	sqlStmtExec.close()
     	jdbcConnection.close()
 	}

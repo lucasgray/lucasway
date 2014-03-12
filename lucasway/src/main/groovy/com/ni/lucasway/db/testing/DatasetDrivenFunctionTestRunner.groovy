@@ -88,7 +88,8 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 
     	if (functionTests.isEmpty()) { findFunctionTests() }
 
-    	def jdbcConnection = sqlSource().createConnection()
+    	def dbAccessor = sqlSource()
+    	def jdbcConnection = dbAccessor.createConnection()
 
     	try
     	{

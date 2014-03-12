@@ -2,16 +2,17 @@ package com.ni.lucasway.db.testing
 
 import groovy.json.JsonSlurper
 
+import org.dbunit.database.DatabaseConfig
 import org.dbunit.database.DatabaseConnection
-
 import org.dbunit.operation.DeleteAllOperation
 import org.dbunit.operation.InsertOperation
-
 import org.dbunit.dataset.xml.FlatXmlDataSet
+import org.dbunit.ext.postgresql.PostgresqlDataTypeFactory
 
 import org.junit.Assert
-
 import org.junit.runner.Description
+
+import com.ni.lucasway.db.testing.dbunit.PostgresqlCustomTimestampDataTypeFactory
 
 /**
  * A test case to call a function and assert its results
@@ -28,19 +29,18 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	def dataSet
 	def invoke = [:] // expect at least 'arguments' entry; optional are 'callAs' and 'schema'.
 	def expectedOutput
-
 	def jdbcConnection
 
 	/**
 	 * @param configDir has files the define the setup and result assertions of the test
 	 */
-	public DatasetDrivenFunctionTestCase(functionName, configDir, invokeCommonConfig = null)
+	public DatasetDrivenFunctionTestCase(functionName, configDir, commonConfig = null)
 	{
 		this.functionName = functionName
 		this.configDir = configDir
 		name = configDir.name
 		loadDataSet(new FileInputStream(new File(configDir, 'dataset.xml')))
-		loadInvokeConfig(new FileInputStream(new File(configDir, 'invoke.json')), invokeCommonConfig)
+		loadInvokeConfig(new FileInputStream(new File(configDir, 'invoke.json')), commonConfig)
 		loadExpectedOutput(new FileInputStream(new File(configDir, 'expected-results.json')))
 	}
 
@@ -75,11 +75,27 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	def setupDataSet()
 	{
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
+
 		println "Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
-		dbunitConnection.config.setProperty('http://www.dbunit.org/features/qualifiedTableNames', true)
+		dbunitConnection.config.setProperty(DatabaseConfig.FEATURE_QUALIFIED_TABLE_NAMES, true)
+		if (jdbcConnection.metaData.driverName.indexOf('postgresql')) {
+			println "Use custom PostgreSQL DBUnit data type factory"
+			dbunitConnection.config.setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, new PostgresqlCustomTimestampDataTypeFactory())
+		}
+		else {
+			def dataTypeFactoryName = dbunitConnection.config.getProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY).class.name
+			println "DBUnit is using ${dataTypeFactoryName} as a data type factory"
+		}
 		println "After updating config property:Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
-		new DeleteAllOperation().execute(dbunitConnection, dataSet)
-		new InsertOperation().execute(dbunitConnection, dataSet)
+		try
+		{
+			new DeleteAllOperation().execute(dbunitConnection, dataSet)
+			new InsertOperation().execute(dbunitConnection, dataSet)
+		}
+		catch (ex) {
+			println "Failed to insert test data: ${ex.message}"
+			ex.printStackTrace(System.out)
+		}
 	}
 
 	def callAndTestFunction(assertResultSet)

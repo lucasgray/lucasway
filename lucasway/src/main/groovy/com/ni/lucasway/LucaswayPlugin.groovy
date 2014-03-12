@@ -31,27 +31,38 @@ class LucaswayPlugin implements Plugin<Project> {
 		project.configurations.sql.transitive = false
 		project.task('newMigration') <<  {
 			java.text.DateFormat df = new java.text.SimpleDateFormat('yyyyMMddSSSS')
-			println "use V"+df.format(new Date())
+			println "use V${df.format(new Date())}"
 		}
 
 		project.task('test') << {
-			SqlMaker.loadClasspathWithSqlDriver(project)
 			
+			if (project.lucasway.skipTests) {
+				println "Lucasway: Skipping Migration Tests"
+				return
+			}
+
+			def testJdbcProperties = new Properties()
+			new FileInputStream(new File('src/test/resources/migration-jdbc.properties')).withStream {
+				testJdbcProperties.load(it)
+			}
+
 			println ""
 			println "--------------------------------------------------------"
 			println "Lucasway: Testing Migrations"
 			println "--------------------------------------------------------"
 			println ""
-			println "\tTest Database Url: ${project.lucasway.test.url}"
-			println "\tTest Database Driver: ${project.lucasway.test.driver}"
-			println "\tTest Database Username: ${project.lucasway.test.username}"
-			println "\tTest Sql File Base: ${project.lucasway.sqlFiles}"
+			println "\tTest Database Url: ${testJdbcProperties.url}"
+			println "\tTest Database Driver: ${testJdbcProperties.driver}"
+			println "\tTest Database Username: ${testJdbcProperties.username}"
+			println "\tTest SQL File Base: ${project.lucasway.sqlFiles}"
 			println ""
 
-		    def migrationRunner = new MigrationRunner(project: project, sqlSource: SqlMaker.byProperties(project.lucasway.test))
+			SqlMaker.loadClasspathWithSqlDriver(project, testJdbcProperties.driver)
+			
+		    def migrationRunner = new MigrationRunner(project: project, sqlSource: SqlMaker.byProperties(testJdbcProperties))
 		    migrationRunner.run()
 
-		    def testSuiteRunner = new DatasetDrivenFunctionTestRunner(sqlSource: SqlMaker.byProperties(project.lucasway.test))
+		    def testSuiteRunner = new DatasetDrivenFunctionTestRunner(sqlSource: SqlMaker.byProperties(testJdbcProperties))
 		    def testResults = new TestResultAggregator()
 		    testSuiteRunner.run(testResults.asNotifier())
 		    testResults.reportResults()
@@ -92,5 +103,5 @@ class LucaswayPluginExtension {
 	Boolean auditing
 	String sqlFiles
 
-	Map test = [:]
+	Boolean skipTests
 }
