@@ -35,7 +35,7 @@ class SqlMaker {
      * The actual migration properties will come by the containing project which
      * sets the properties in the lucasway plugin configuration.
      */
-    def static byProperties(Map properties)
+    def static byProperties(properties)
     {
 		return {
 			SqlMaker.makeSql(

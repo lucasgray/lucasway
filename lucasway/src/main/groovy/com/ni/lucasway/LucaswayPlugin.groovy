@@ -86,7 +86,7 @@ class LucaswayPlugin implements Plugin<Project> {
 			
 			SqlMaker.loadClasspathWithSqlDriver(project)
 
-			new MigrationRunner(sqlSource: SqlMaker.byProperties(project.lucasway)).run()
+			new MigrationRunner(project: project, sqlSource: SqlMaker.byProperties(project.lucasway)).run()
 		}
 
 		project.getTasks().getByName('lucaswayMigrate').dependsOn(project.getTasks().getByName('test'))

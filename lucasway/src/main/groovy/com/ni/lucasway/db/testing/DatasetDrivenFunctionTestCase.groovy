@@ -12,6 +12,9 @@ import org.dbunit.ext.postgresql.PostgresqlDataTypeFactory
 import org.junit.Assert
 import org.junit.runner.Description
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import com.ni.lucasway.db.testing.dbunit.PostgresqlCustomTimestampDataTypeFactory
 
 /**
@@ -19,15 +22,21 @@ import com.ni.lucasway.db.testing.dbunit.PostgresqlCustomTimestampDataTypeFactor
  */
 public class DatasetDrivenFunctionTestCase implements Runnable
 {
+	def static final LOG = LoggerFactory.getLogger(DatasetDrivenFunctionTestCase.class)
+
 	def functionName
 	def configDir
 	def name
 
 	/**
-	 * The database will be 
+	 * The database will be refreshed at the beginning of the test case; all tables
+	 * with records in the data set will be emptied (DeleteAllOperation) and then
+	 * records in the data set will be inserted.
 	 */
 	def dataSet
+
 	def invoke = [:] // expect at least 'arguments' entry; optional are 'callAs' and 'schema'.
+	
 	def expectedOutput
 	def jdbcConnection
 
@@ -75,27 +84,13 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	def setupDataSet()
 	{
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
-
-		println "Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
 		dbunitConnection.config.setProperty(DatabaseConfig.FEATURE_QUALIFIED_TABLE_NAMES, true)
 		if (jdbcConnection.metaData.driverName.indexOf('postgresql')) {
-			println "Use custom PostgreSQL DBUnit data type factory"
+			LOG.debug("Use custom PostgreSQL DBUnit data type factory")
 			dbunitConnection.config.setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, new PostgresqlCustomTimestampDataTypeFactory())
 		}
-		else {
-			def dataTypeFactoryName = dbunitConnection.config.getProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY).class.name
-			println "DBUnit is using ${dataTypeFactoryName} as a data type factory"
-		}
-		println "After updating config property:Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
-		try
-		{
-			new DeleteAllOperation().execute(dbunitConnection, dataSet)
-			new InsertOperation().execute(dbunitConnection, dataSet)
-		}
-		catch (ex) {
-			println "Failed to insert test data: ${ex.message}"
-			ex.printStackTrace(System.out)
-		}
+		new DeleteAllOperation().execute(dbunitConnection, dataSet)
+		new InsertOperation().execute(dbunitConnection, dataSet)
 	}
 
 	def callAndTestFunction(assertResultSet)
@@ -144,7 +139,7 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 			def columnCount = resultSet.metaData.columnCount
 			Assert.assertEquals("Function output row has incorrect # columns: expected=${columnCount}; actual=${expectedRow.size()}", expectedRow.size(), columnCount)
 			expectedRow.eachWithIndex { expectedColumn, columnIndex ->
-				Assert.assertEquals("Function output column is not expected: expectedValue=${expectedColumn}; actualValue=${resultSet.getObject(columnIndex + 1)}", expectedColumn, resultSet.getObject(columnIndex + 1))
+				Assert.assertEquals("Function output column is not expected: columnIndex=${columnIndex}; expectedValue=${expectedColumn}; actualValue=${resultSet.getObject(columnIndex + 1)}", expectedColumn, resultSet.getObject(columnIndex + 1))
 			}
 		}
 	}
