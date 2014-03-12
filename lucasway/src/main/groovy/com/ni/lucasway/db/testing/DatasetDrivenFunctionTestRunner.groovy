@@ -41,7 +41,6 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 				if (sqlFunctionFile.name.endsWith('.sql'))
 				{
 					def functionTestName = DirectoryScanUtils.stripExtension(DirectoryScanUtils.getRelativePath(functionSourceBaseDir, sqlFunctionFile))
-					println "SQL file found: location=${sqlFunctionFile}; functionTestName=${functionTestName}"
 					functionTestsToExpect += functionTestName
 				}
 			}
@@ -100,6 +99,7 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 	    		testFutures.addAll(
 	    			testCases.collect { testCase ->
 
+	    				println "Running SQL Function Test Case: ${testCase.name}"
 		    			notifier.fireTestStarted(testCase.description)
 		    			
 		    			try

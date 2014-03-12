@@ -86,16 +86,16 @@ public class TestResultAggregator extends RunListener
 		println ""
 		println "Tests run: ${allTests.size()}, Failures: ${assertionFailures().size()}, Errors: ${nonAssertionFailures().size()}, Skipped: ${ignored.size()}, Time elapsed: ${printDurationInSeconds()} sec"
 		println ""
-		println "Results:"
-		println ""
-		println "Tests in error:"
-		println ""
-		failures.each {
-			println "${it.toString()}"
-			if (it.exception != null) {
-				it.exception.printStackTrace(System.out)
-			}
+		if (! failures.isEmpty()) {
+			println "Tests in error:"
 			println ""
+			failures.each {
+				println "${it.toString()}"
+				if (it.exception != null) {
+					it.exception.printStackTrace(System.out)
+				}
+				println ""
+			}
 		}
 	}
 }

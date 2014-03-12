@@ -89,7 +89,7 @@ class LucaswayPlugin implements Plugin<Project> {
 			new MigrationRunner(project: project, sqlSource: SqlMaker.byProperties(project.lucasway)).run()
 		}
 
-		project.getTasks().getByName('lucaswayMigrate').dependsOn(project.getTasks().getByName('test'))
+		project.tasks.getByName('lucaswayMigrate').dependsOn(project.tasks.getByName('test'))
 	}
 }
 
