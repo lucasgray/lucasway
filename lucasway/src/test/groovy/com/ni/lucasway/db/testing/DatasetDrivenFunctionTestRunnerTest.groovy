@@ -67,7 +67,7 @@ public class DatasetDrivenFunctionTestRunnerTest
 		def testCase = testCases[0]
 		Assert.assertEquals('are_you_mocking_me', testCase.functionName)
 		Assert.assertEquals("${TEST_FUNCTION_NAME}::main".toString(), testCase.name)
-		Assert.assertEquals([ "foo", "boo", 1234, true ], testCase.parameters)
+		Assert.assertEquals([ "foo", "boo", 1234, true ], testCase.invoke.arguments)
 		Assert.assertEquals(1, testCase.expectedOutput.size())
 		Assert.assertEquals([ 999, "abc", "def" ], testCase.expectedOutput[0])
 	}

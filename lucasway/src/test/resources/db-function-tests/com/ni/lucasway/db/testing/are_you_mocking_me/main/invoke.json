@@ -1,0 +1,8 @@
+{
+  "arguments": [
+	  "foo",
+	  "boo",
+	  1234,
+	  true
+  ]
+}

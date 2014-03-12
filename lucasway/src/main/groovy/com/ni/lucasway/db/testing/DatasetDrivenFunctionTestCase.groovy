@@ -25,8 +25,8 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	/**
 	 * The database will be 
 	 */
-	def preDataSet
-	def parameters
+	def dataSet
+	def invoke = [:] // expect at least 'arguments' entry; optional are 'callAs' and 'schema'.
 	def expectedOutput
 
 	def jdbcConnection
@@ -34,26 +34,31 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	/**
 	 * @param configDir has files the define the setup and result assertions of the test
 	 */
-	public DatasetDrivenFunctionTestCase(functionName, configDir)
+	public DatasetDrivenFunctionTestCase(functionName, configDir, invokeCommonConfig = null)
 	{
 		this.functionName = functionName
 		this.configDir = configDir
 		name = configDir.name
-		preDataSet = new FlatXmlDataSet(new FileInputStream(new File(configDir, 'dataset.xml')))
-		parameters = readFunctionParameters(new FileInputStream(new File(configDir, 'params.json')))
-		expectedOutput = readExpectedOutput(new FileInputStream(new File(configDir, 'expected-results.json')))
+		loadDataSet(new FileInputStream(new File(configDir, 'dataset.xml')))
+		loadInvokeConfig(new FileInputStream(new File(configDir, 'invoke.json')), invokeCommonConfig)
+		loadExpectedOutput(new FileInputStream(new File(configDir, 'expected-results.json')))
 	}
 
 	def copyOf() {
-		return new DatasetDrivenFunctionTestCase(functionName, configDir)
+		return new DatasetDrivenFunctionTestCase(functionName, configDir, invoke)
 	}
 
-	def readFunctionParameters(confInputStream) {
-		return new JsonSlurper().parse(new InputStreamReader(confInputStream))
+	def loadDataSet(testDataStream) {
+		dataSet = new FlatXmlDataSet(testDataStream)
 	}
 
-	def readExpectedOutput(confOutputStream) {
-		return new JsonSlurper().parse(new InputStreamReader(confOutputStream))
+	def loadInvokeConfig(testDataStream, commonConfig) {
+		if (commonConfig) invoke.putAll(commonConfig)
+		invoke.putAll(new JsonSlurper().parse(new InputStreamReader(testDataStream)))
+	}
+
+	def loadExpectedOutput(testDataStream) {
+		expectedOutput = new JsonSlurper().parse(new InputStreamReader(testDataStream))
 	}
 
 	@Override
@@ -67,14 +72,14 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		Description.createTestDescription(getClass(), name)
 	}
 
-	def setupDataSet() {
-		println 'your mom is a whore'
+	def setupDataSet()
+	{
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
 		println "Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
 		dbunitConnection.config.setProperty('http://www.dbunit.org/features/qualifiedTableNames', true)
 		println "After updating config property:Is DBUnit respecting schemas: schemaAware=${dbunitConnection.config.getProperty('http://www.dbunit.org/features/qualifiedTableNames')}"
-		new DeleteAllOperation().execute(dbunitConnection, preDataSet)
-		new InsertOperation().execute(dbunitConnection, preDataSet)
+		new DeleteAllOperation().execute(dbunitConnection, dataSet)
+		new InsertOperation().execute(dbunitConnection, dataSet)
 	}
 
 	def callAndTestFunction(assertResultSet)
@@ -84,7 +89,7 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 
 		try
 		{
-			functionCall = jdbcConnection.prepareCall(printCallableStatement())
+			functionCall = jdbcConnection.prepareCall(formatPreparedCall())
 			setFunctionParameters(functionCall)
 
 			functionResultSet = functionCall.executeQuery()
@@ -96,12 +101,19 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		}
 	}
 
-	def printCallableStatement() {
-		"{call ${functionName}(${parameters.collect{ '?' }.join(', ')})}"
+	def formatPreparedCall()
+	{
+		def actualFunctionName
+		if (invoke.callAs) actualFunctionName = invoke.callAs
+		else if (invoke.schema) actualFunctionName = "${invoke.schema}.${functionName}"
+		else actualFunctionName = functionName
+		return "{call ${actualFunctionName}(${invoke.arguments.collect{ '?' }.join(', ')})}"
 	}
 
 	def setFunctionParameters(jdbcStmt) {
-		parameters.eachWithIndex { item, index -> jdbcStmt.setObject(index + 1, item) }
+		invoke.arguments.eachWithIndex { item, index ->
+			jdbcStmt.setObject(index + 1, item)
+		}
 	}
 
 	def matchResultSetToExpectedOutput = { resultSet ->
