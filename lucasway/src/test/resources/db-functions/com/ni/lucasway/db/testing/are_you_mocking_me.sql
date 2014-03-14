@@ -12,7 +12,9 @@ AS
 $$
 BEGIN
 	RETURN QUERY
-	SELECT buzzlightyear.id, buzzlightyear.col1, buzzlightyear.col2 FROM buzzlightyear;
+	SELECT buzzlightyear.id, buzzlightyear.col1, buzzlightyear.col2
+	  FROM buzzlightyear
+	  JOIN toyroom ON buzzlightyear.toyroom_id = toyroom.id;
 END;
 $$
 LANGUAGE plpgsql;

@@ -1,4 +1,6 @@
-package com.ni.lucasway.db.testing
+package com.ni.lucasway.utils
+
+import groovy.io.FileType
 
 public class DirectoryScanUtils
 {
@@ -24,5 +26,11 @@ public class DirectoryScanUtils
 
 	def static ensureFileTyped(fileRef) {
 		return fileRef instanceof File ? fileRef : new File(fileRef)
+	}
+
+	def static buildAndProcessNodes(File dir, ObjectNode parentNode = null, consumeDir) {
+		def node = new ObjectNode(parentNode, dir.name, consumeDir(dir, parentNode))
+		dir.eachFile(FileType.DIRECTORIES) { subDir -> buildAndProcessNodes(subDir, node, consumeDir) }
+		return node
 	}
 }

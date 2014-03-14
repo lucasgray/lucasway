@@ -6,6 +6,8 @@ import org.dbunit.database.DatabaseConfig
 import org.dbunit.database.DatabaseConnection
 import org.dbunit.operation.DeleteAllOperation
 import org.dbunit.operation.InsertOperation
+import org.dbunit.dataset.CompositeDataSet
+import org.dbunit.dataset.DefaultDataSet
 import org.dbunit.dataset.xml.FlatXmlDataSet
 import org.dbunit.ext.postgresql.PostgresqlDataTypeFactory
 
@@ -24,16 +26,16 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 {
 	def static final LOG = LoggerFactory.getLogger(DatasetDrivenFunctionTestCase.class)
 
-	def functionName
-	def configDir
 	def name
+	def configDir
+	def commonConfig = [:]
 
 	/**
 	 * The database will be refreshed at the beginning of the test case; all tables
 	 * with records in the data set will be emptied (DeleteAllOperation) and then
 	 * records in the data set will be inserted.
 	 */
-	def dataSet
+	def dataSet = new DefaultDataSet()
 
 	def invoke = [:] // expect at least 'arguments' entry; optional are 'callAs' and 'schema'.
 	
@@ -43,31 +45,47 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 	/**
 	 * @param configDir has files the define the setup and result assertions of the test
 	 */
-	public DatasetDrivenFunctionTestCase(functionName, configDir, commonConfig = null)
+	public DatasetDrivenFunctionTestCase(String name, File configDir, Map commonConfig = null)
 	{
-		this.functionName = functionName
+		this.name = name
 		this.configDir = configDir
-		name = configDir.name
-		loadDataSet(new FileInputStream(new File(configDir, 'dataset.xml')))
-		loadInvokeConfig(new FileInputStream(new File(configDir, 'invoke.json')), commonConfig)
+		this.commonConfig.putAll(commonConfig)
+		loadDataSet(new File(configDir, 'dataset.xml'), commonConfig?.dataSet)
+		loadInvokeConfig(new File(configDir, 'invoke.json'), commonConfig?.invoke)
 		loadExpectedOutput(new FileInputStream(new File(configDir, 'expected-results.json')))
 	}
 
 	def copyOf() {
-		return new DatasetDrivenFunctionTestCase(functionName, configDir, invoke)
+		return new DatasetDrivenFunctionTestCase(name, configDir, commonConfig)
 	}
 
-	def loadDataSet(testDataStream) {
-		dataSet = new FlatXmlDataSet(testDataStream)
+	def loadDataSet(dataSetFile, commonDataSet = null)
+	{
+		if (dataSetFile.exists()) dataSet = new FlatXmlDataSet(new FileInputStream(dataSetFile))
+		if (commonDataSet) {
+			if (dataSet) dataSet = new CompositeDataSet(dataSet, commonDataSet)
+			else dataSet = commonDataSet
+		}
 	}
 
-	def loadInvokeConfig(testDataStream, commonConfig) {
-		if (commonConfig) invoke.putAll(commonConfig)
-		invoke.putAll(new JsonSlurper().parse(new InputStreamReader(testDataStream)))
+	def loadInvokeConfig(invokeFile, commonInvokeConfig = null)
+	{
+		if (commonInvokeConfig) invoke.putAll(commonInvokeConfig)
+		if (invokeFile.exists()) {
+			invokeFile.withReader {
+				invoke.putAll(new JsonSlurper().parse(it))
+			}
+		}
 	}
 
 	def loadExpectedOutput(testDataStream) {
 		expectedOutput = new JsonSlurper().parse(new InputStreamReader(testDataStream))
+	}
+
+	def getFunctionName() {
+		if (invoke.callAs) return invoke.callAs
+		else if (invoke.schema) return "${invoke.schema}.${configDir.name}"
+		else return configDir.parentFile.name
 	}
 
 	@Override
@@ -81,7 +99,7 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		Description.createTestDescription(getClass(), name)
 	}
 
-	def setupDataSet()
+	protected def setupDataSet()
 	{
 		def dbunitConnection = new DatabaseConnection(jdbcConnection)
 		dbunitConnection.config.setProperty(DatabaseConfig.FEATURE_QUALIFIED_TABLE_NAMES, true)
@@ -93,7 +111,7 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		new InsertOperation().execute(dbunitConnection, dataSet)
 	}
 
-	def callAndTestFunction(assertResultSet)
+	protected def callAndTestFunction(assertResultSet)
 	{
 		def functionCall = null
 		def functionResultSet = null
@@ -112,22 +130,17 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		}
 	}
 
-	def formatPreparedCall()
-	{
-		def actualFunctionName
-		if (invoke.callAs) actualFunctionName = invoke.callAs
-		else if (invoke.schema) actualFunctionName = "${invoke.schema}.${functionName}"
-		else actualFunctionName = functionName
-		return "{call ${actualFunctionName}(${invoke.arguments.collect{ '?' }.join(', ')})}"
+	protected def formatPreparedCall() {
+		return "{call ${functionName}(${invoke.arguments.collect{ '?' }.join(', ')})}"
 	}
 
-	def setFunctionParameters(jdbcStmt) {
+	protected def setFunctionParameters(jdbcStmt) {
 		invoke.arguments.eachWithIndex { item, index ->
 			jdbcStmt.setObject(index + 1, item)
 		}
 	}
 
-	def matchResultSetToExpectedOutput = { resultSet ->
+	protected def matchResultSetToExpectedOutput = { resultSet ->
 
 		def numResultSetRows = 0
 		expectedOutput.each { expectedRow ->

@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataset>
-    <public.buzzlightyear id="999" col1="abc" col2="def" expiresAt="infinity"/>
+    <public.buzzlightyear id="999" col1="abc" col2="def" expiresAt="infinity" toyroom_id="1234"/>
 </dataset>
