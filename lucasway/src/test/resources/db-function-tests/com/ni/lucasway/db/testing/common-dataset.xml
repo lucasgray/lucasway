@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataset>
+	<!-- This serves all the unit tests under this directory as an example that unit tests
+	     will combine this set of data to its own to form a composite data set. -->
     <public.toyroom id="1234" leader="Woody" is_fun="true"/>
 </dataset>

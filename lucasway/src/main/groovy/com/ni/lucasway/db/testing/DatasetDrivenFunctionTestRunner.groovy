@@ -52,20 +52,24 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 				}
 			}
 		}
+		
+		println "Only these functions at their paths will be expected to have tests"
+		functionTestsToExpect.each { println it }
+		println ""
 
 		functionTests = DirectoryScanUtils.buildAndProcessNodes(functionTestBaseDir) { treeDir, parentNode ->
 			def functionPath = DirectoryScanUtils.getRelativePath(functionTestBaseDir, treeDir)
+			def testContext = gatherTestContext(treeDir, parentNode?.value?.testContext)
             if (functionTestsToExpect.contains(functionPath)) {
+            	println "SQL Test Directory: ${treeDir}; functionPath=${functionPath}; isTest=${functionTestsToExpect.contains(functionPath)}; testContext=${testContext}"
             	return [
-            		testName: functionPath, is_test: true,
-            		testCases: harvestFunctionTestCases(treeDir, functionPath, parentNode?.value?.testContext)
+            		testName: functionPath, containsTests: true,
+            		testCases: harvestFunctionTestCases(treeDir, functionPath, testContext),
+            		testContext: testContext
             	]
 			}
 			else {
-				return [
-					is_test: false,
-				    testContext: gatherTestContext(treeDir, parentNode?.value?.testContext)
-				]
+				return [ containsTests: false, testContext: testContext ]
 			}
 		}
 	}
@@ -77,13 +81,15 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 		testDir.eachFile(FileType.FILES) { file ->
 			def configNameMatch = file.name =~ /common-(.+)(?:\.\w+)+/
 			if (configNameMatch.size() == 1) {
+				println "Found test config context: ${file.path}"
 				def configResource = configNameMatch[0][1]
 				if (configResource.equals('dataset')) {
 					testContext.dataSet = new FlatXmlDataSet(new FileInputStream(file))
 				}
 				else if (configResource.equals('invoke')) {
-					file.withInputStream {
+					file.withReader {
 						testContext.invoke = new JsonSlurper().parse(it)
+						println "Loaded test invoke context: file=${file.path}; config=${testContext.invoke}"
 					}
 				}
 			}
@@ -98,8 +104,12 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 	{
         if (parentTestContext) {
             if (parentTestContext?.dataSet) {
-            	println "Parent test context has a data set"
-                testContext.dataSet = new CompositeDataSet(parentTestContext.dataSet, testContext.dataSet)
+            	if (testContext.dataSet) {
+            		testContext.dataSet = new CompositeDataSet(parentTestContext.dataSet, testContext.dataSet)
+            	}
+            	else {
+            		testContext.dataSet = parentTestContext.dataSet
+            	}
             }
             testContext.invoke.putAll(parentTestContext.invoke)
         }
@@ -109,6 +119,7 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 	{
 		def testCases = []
 		functionTestDir.eachDir { testCaseDir ->
+			println "Creating Test Case for function=${functionPath}: testCaseDir=${testCaseDir.name}"
 			testCases += new DatasetDrivenFunctionTestCase("${functionPath}::${testCaseDir.name}", testCaseDir, testContext)
 		}
 		return testCases
@@ -139,8 +150,8 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 
     		notifier.fireTestRunStarted(getDescription())
 
-	    	functionTests.find(ObjectNode.breadthFirst) { node ->
-	    		node.value.is_test
+	    	functionTests.findAll(ObjectNode.breadthFirst) { node ->
+	    		node.value.containsTests
 	    	}.each { testCaseNode ->
     			println "Running SQL Function Test Cases: functionName=${testCaseNode.name}; #cases=${testCaseNode.value.testCases.size()}"
     			testCaseNode.value.testCases.each { runTestCase(it, notifier) }

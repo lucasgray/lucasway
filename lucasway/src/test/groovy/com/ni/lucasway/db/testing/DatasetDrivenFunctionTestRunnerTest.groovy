@@ -1,5 +1,6 @@
 package com.ni.lucasway.db.testing
 
+import groovy.io.FileType
 import groovy.sql.Sql
 
 import org.junit.Assert
@@ -42,10 +43,18 @@ public class DatasetDrivenFunctionTestRunnerTest
     	def jdbcConnection = sqlSource().createConnection()
     	def sqlStmtExec = jdbcConnection.createStatement()
     	sqlStmtExec.execute('DROP TABLE IF EXISTS toyroom')
+    	sqlStmtExec.execute('DROP TABLE IF EXISTS lucasway_test_table_1')
     	sqlStmtExec.execute('DROP TABLE IF EXISTS buzzlightyear')
     	sqlStmtExec.execute('CREATE TABLE toyroom (id INTEGER, leader TEXT, is_fun BOOLEAN)')
     	sqlStmtExec.execute('CREATE TABLE buzzlightyear (id INTEGER, col1 TEXT, col2 TEXT, expiresAt TIMESTAMP, toyroom_id INTEGER)')
-    	sqlStmtExec.execute(new File(SQL_FUNCTIONS_BASE_DIR, TEST_FUNCTION_PATH).getText())
+    	sqlStmtExec.execute('CREATE TABLE lucasway_test_table_1 (id INTEGER, col1 TEXT, col2 TEXT)')
+    	SQL_FUNCTIONS_BASE_DIR.eachFileRecurse(FileType.FILES) { file ->
+    		println "DatasetDrivenFunctionTestRunnerTest: your mom is a whore: ${file}"
+    		if (file.name.endsWith('.sql')) {
+    			println "DatasetDrivenFunctionTestRunnerTest: Running SQL function definition: ${file}"
+    			sqlStmtExec.execute(file.getText())
+    		}
+    	}
     	sqlStmtExec.close()
     	jdbcConnection.close()
 	}
@@ -92,7 +101,7 @@ public class DatasetDrivenFunctionTestRunnerTest
 		testedObject.run(testTally.asNotifier())
 		testTally.reportResults()
 
-		Assert.assertEquals(1, testTally.successful.size())
+		Assert.assertEquals(3, testTally.successful.size())
 		Assert.assertEquals("${TEST_NAME}::main(com.ni.lucasway.db.testing.DatasetDrivenFunctionTestCase)".toString(), testTally.successful[0].displayName)
 
 		Assert.assertEquals(1, testTally.failures.size())

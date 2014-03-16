@@ -59,8 +59,7 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		return new DatasetDrivenFunctionTestCase(name, configDir, commonConfig)
 	}
 
-	def loadDataSet(dataSetFile, commonDataSet = null)
-	{
+	def loadDataSet(dataSetFile, commonDataSet = null) {
 		if (dataSetFile.exists()) dataSet = new FlatXmlDataSet(new FileInputStream(dataSetFile))
 		if (commonDataSet) {
 			if (dataSet) dataSet = new CompositeDataSet(dataSet, commonDataSet)
@@ -68,14 +67,10 @@ public class DatasetDrivenFunctionTestCase implements Runnable
 		}
 	}
 
-	def loadInvokeConfig(invokeFile, commonInvokeConfig = null)
-	{
+	def loadInvokeConfig(invokeFile, commonInvokeConfig = null) {
 		if (commonInvokeConfig) invoke.putAll(commonInvokeConfig)
-		if (invokeFile.exists()) {
-			invokeFile.withReader {
-				invoke.putAll(new JsonSlurper().parse(it))
-			}
-		}
+		if (invokeFile.exists()) { invokeFile.withReader { invoke.putAll(new JsonSlurper().parse(it)) } }
+		println "Invoke config of testCase: name=${name}; config=${invoke}"
 	}
 
 	def loadExpectedOutput(testDataStream) {

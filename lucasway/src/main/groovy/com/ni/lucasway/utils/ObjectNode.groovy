@@ -2,7 +2,15 @@ package com.ni.lucasway.utils
 
 public class ObjectNode
 {
-	static enum ObjectNodeVisitState { HALT_FULL, HALT_CHILDREN, CONTINUE }
+	/**
+	 * For traversing a tree and visiting nodes a consumer closure or someother
+	 * control piece has the ability to tell the traverse method (eg. depthFirst)
+	 * when to stop the traversal.
+	 * 
+	 * There is a complete/full halt, and there is a semi-halt that prevents visiting
+	 * the children of a node.
+	 */
+	static enum ObjectNodeVisitState { HALT_FULL, HALT_CHILDREN }
 
 	/**
 	 * Traverse the node tree in depth-first fashion.
@@ -54,7 +62,7 @@ public class ObjectNode
 			return ObjectNode.breadthFirstChildren(grandChildren, consumeNode)
 		}
 		else {
-			return ObjectNodeVisitState.CONTINUE
+			return null
 		}
 	}
 
@@ -125,6 +133,12 @@ public class ObjectNode
 		traverseTree(this, consumeNode)
 	}
 
+	def count() {
+		def count = 0
+		visit() { count++ }
+		return count
+	}
+
 	public ObjectNode getParent() {
 		return parent
 	}
@@ -148,14 +162,6 @@ public class ObjectNode
 		parent.children -= this
 		parent.children += replaceWith
 		children.each { child -> child.setParent(replaceWith) }
-	}
-
-	def printTree(indent = 0) {
-		println "${' '.multiply(indent)}${name.padRight(70)}: ${value}"
-		println "${' '.multiply(indent)}- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-		children.each {
-			it.printTree(indent + 4)
-		}
 	}
 
 	@Override

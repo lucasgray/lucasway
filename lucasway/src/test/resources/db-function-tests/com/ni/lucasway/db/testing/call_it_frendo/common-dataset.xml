@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+	<!-- This combines with common-dataset.xml in the directory; records both from that data set and
+	     this dataset will be installed before each unit test in the directories below this directory. -->
+    <public.lucasway_test_table_1 id="456" col1="charlie" col2="chaplin"/>
+</dataset>
