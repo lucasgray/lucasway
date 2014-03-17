@@ -74,9 +74,11 @@ class FileParsing {
 		
 		//--V201309140000_CreateTable
 		migration.version = metaBuffer.collect {it.find('^--.?V[\\d]{12}_.*') }.find{it!=null}.find('V[\\d]{12}_.*')
+		migration.version = migration.version.trim()
 		
 		//--entity:dataview
 		migration.name = metaBuffer.collect {it.find('^--.?entity:.*') }.find{it!=null}.find('entity:.*').replaceAll('entity:', '')
+		migration.name = migration.name.trim()
 		
 		migration.childNames = findChildren(metaBuffer.join("\n"))
 		

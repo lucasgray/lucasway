@@ -25,9 +25,9 @@ public class MigrationRunner
 
 		//TODO these should be configs
 		ConfigurableFileTree functs =
-				project.fileTree(dir:'src/main/sql', excludes:['**/.*', 'tables/*'])
+				project.fileTree(dir:'src/main/sql', excludes:['tables/*'], includes:['**/*.sql'])
 		ConfigurableFileTree tables =
-				project.fileTree(dir:'src/main/sql/tables', , excludes:['**/.*'])
+				project.fileTree(dir:'src/main/sql/tables')
 
 		LOG.info "Functs: ${functs}" 
 		LOG.info "Tables: ${tables}" 
