@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://w3.org/1999/xhtml">
+  <head>
+    <title>Lucasway DB Migration Testing</title>
+    <style type="text/css">
+      p.code { padding-left: 10px; margin-left: 8px; border: 1px solid black; background-color: #EEFFEE; }
+      ul.code { padding-left: 22px; margin-left: 8px; border: 1px solid black; background-color: #EEFFEE; }
+      span.code { font-weight: bold; }
+      h3.code-heading { font-weight: bold; }
+    </style>
+  </head>
+  <body>
+  	<div>
+  	  <h1>Lucasway DB Migration Testing</h1>
+  	  <p>
+  	    This guide will show how to build a fixture-driven set of test cases that mirror
+  	    your SQL function migration dictionary (directory tree).
+      </p>
+      <p>
+  	    How the test suite works is similar to how the migration itself functions: scan
+  	    directories for SQL functions and then execute the SQL on the database.
+      </p>
+      <p>
+  	    Your suite of tests is laid out in a mirror directory structure: each test is a
+  	    directory with the same name as your SQL function file.  For example, if this is
+  	    a migration in your set,
+      </p>
+  	  <p class="code">
+  	    src/main/sql/functions/com/ni/project_a/subfeature1/function_x.sql
+      </p>
+      <p>and your test suite is rooted at</p>
+      <p class="code">
+        src/test/sql/functions
+      </p>
+      <p>then you will define a set of test cases for that function in a directory at:</p>
+  	  <p class="code">
+  	    src/test/sql/functions/com/ni/project_a/subfeature1/function_x/
+  	  </p>
+  	  <p>
+  	    In that directory are test case subdirectories which are the actual tests on the
+  	    function.  Within each test case lies these fixture files:
+  	  </p>
+  	  <ul class="code">
+  	    <li>dataset.xml</li>
+  	    <li>invoke.json</li>
+		<li>expected-results.json</li>
+	  </ul>
+	  <h2>Test Fixtures Explained</h2>
+	  <p>
+	    In each test case the set up phase establishes a set of data in the test database using
+	    <span class="code">dataset.xml</span> as the definition of table rows; then,
+	    your function is called with arguments defined in
+	    <span class="code">invoke.json</span>; lastly, the result set of the function call
+	    is asserted by matching it against <code class="code">expected-results.json</code>.
+	  </p>
+
+	  <h3 class="code-heading">dataset.xml</h3>
+	  <p>
+	    This file is a list of rows to insert into the test database.  The schema here is
+	    identical to the DB itself: a row is defined as a XML element under &quot;dataset&quot;
+	    with a name equal to the table (including schema as explained later).  The row's
+	    columns are defined using XML attributes named the same as the column.  For example,
+	  </p>
+	  <p class="code">
+	    &lt;dataview id=&quot;1&quot; native_dataview_id=&quot;7777&quot; name=&quot;GENERAL_CONSUMER&quot; display_name=&quot;General Consumer&quot;/&gt;
+	  </p>
+	  <p>
+	    The test case will insert a row specifying only those 4 three columns into
+	    &quot;dataview&quot;; moreover, all records in that table beforehand are deleted
+	    as a clean-slate assurance to the test that only the records you specify are
+	    present when your function is called.
+	  </p>
+	  <p>
+	    NOTE: Tables <b>not</b> referenced in your data set (or parent, common datasets mentioned
+	    later) are unaffected.
+	  </p>
+	  <p>
+	    NOTE: You must specify the table's schema in XML element name even if it is public.
+	  </p>
+
+	  <h3 class="code-heading">invoke.json</h3>
+	  <p>
+	    A test case is unique in either a) how a function is called or b) the results that
+	    appear based on the data in the database at the time.  Your test case specifies
+	    the arguments to define this unique scenario in the system.
+	  </p>
+	  <p>
+	    Case in point: a function, <span class="code">get_dataview(...)</span>, will
+        have two parameters to it: in a test case called &quot;main&quot; we'll define the
+        arguments to pass in the tested call:
+      </p>
+	  <p class="code">
+	    {
+	      &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
+	    }
+      </p>
+      <p>
+        The invocation of the function is performed in JDBC using a <span class="code">CallableStatement</span>.
+        Arguments are set using this class' <span class="code">setObject(argIndex, argValue)</span> methods.  The
+        result is that the JDBC SQL progresses as such:
+      </p>
+      <ul class="code">
+        <li>{call: get_dataview(?, ?)}</li>
+        <li>{call: get_dataview(1, 'GENERAL_CONSUMER')}</li>
+      </ul>
+      <p>
+        But wait there's more!  If your SQL function file name differs from the actual function
+        name or if your functions are not in the public schema, then the test case must specify
+        how to call it:
+      </p>
+      <p class="code">
+        {
+          &quot;callAs&quot;: &quot;classification.getdataview&quot;
+          &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
+        }
+      </p>
+      <p>
+        The test case will actuall invoke <span class="code">classification.getdataview</span> if it sees
+        &quot;callAs&quot; in <span class="code">invoke.json</span>.  Alternatively, if your
+        SQL function file name matches your SQL function name, then you can simply say,
+      </p>
+      <p class="code">
+        {
+          &quot;schema&quot;: &quot;classification&quot;
+          &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
+        }
+      </p>
+      <p>
+        As a result here <span class="code">classification.get_dataview</span> is called.
+      </p>
+      <h3 class="code-heading">expected-results.json</h3>
+      <p>
+        As a precursor, note that &quot;result set&quot; refers to the return value of the
+        function as this is terminology used in JDBC.  More importantly, note that only 
+        functions that return tables are supported at this time.
+      </p>
+      <p>
+        In order to match up the function's output a JSON file is defined as an array of arrays.
+        Each expected result set row is an inner array.  The expected columns are defined with
+        primitive JSON values.  The order of the rows and the order of the columns in the JSON
+        file is also expected to be the order of the actual result set.
+      </p>
+      <p class="code">
+        [
+          [ 1, 7777, "GENERAL_CONSUMER", "General Consumer" ]
+        ]
+      </p>
+      <p>
+        In this example only one row is expected in the result set; in the first row, we
+        expected an Integer equal to 1 to be the first column, the second column to be an
+        Integer equal to 7777, the third column a String equal to &quot;GENERAL_CONSUMER&quot;,
+        and lastly the fourth and final column a String equal to &quot;General Consumer&quot;
+      </p>
+      <p>An empty result set as you'd imagine is an empty JSON array.</p>
+      <h2>Rolling It All Together</h2>
+      <p>So the test case, &quot;main&quot;, will run the following data set:</p>
+      <p class="code">
+	    &lt;public.dataview id=&quot;1&quot; native_dataview_id=&quot;7777&quot; name=&quot;GENERAL_CONSUMER&quot; display_name=&quot;General Consumer&quot;/&gt;
+	  </p>
+	  <p>to insert a dataview row into the test database; all other data views are deleted.</p>
+	  <p>
+	    Next, <span class="code">classification.get_dataview(1, &quot;GENERAL_CONSUMER&quot;)</span>
+   	    is called which yields a result set that is matched to ...
+   	  </p>
+   	  <p class="code">
+        [
+          [ 1, 7777, "GENERAL_CONSUMER", "General Consumer" ]
+        ]
+      </p>
+      <h2>Test Hierarchy Context</h2>
+      <p>
+        If you notice files above your test case or even test directories named <span class="code">common-*</span>
+        then you are noticing contextual, parent fixture files that provide distributed, common
+        test configuration.
+      </p>
+
+      <h3>common-dataset.xml</h3>
+      <p>
+        A suite of tests can have many test cases, so to reduce redundantly specifying a familiar, common
+        set of table rows, the test suite directory tree can have base dataset files that
+        concatenate with an individual test case's data set.
+      </p>
+      <p>Example: above the <span class="code">get_dataview</span> test case:</p>
+      <p class="code">
+         &lt;public.some_common_table_row col1=&quot;x&quot; col2=&quot;y&quot; col3=&quot;z&quot;&gt;
+      </p>
+      <p>
+        All tests in directories at or below the directory containing this <span class="code">common-dataset.xml</span>
+        will make a composite data set with this and their own.  This will result in a record in
+        &quot;some_common_table_row&quot; and &quot;dataview&quot; for the test, <span class="code">get_dataview</span>.
+      </p>
+
+      <h3>common-invoke.json</h3>
+      <p>
+        Just with data sets, if you have common properties in your <span class="code">invoke.json</span>
+        map files you can push them up into distributed map files.  All tests underneath will merge
+        the common properties with their own.
+      </p>
+  	</div>
+  </body>
+</html>
