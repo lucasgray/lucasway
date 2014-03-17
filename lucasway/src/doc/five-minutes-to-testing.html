@@ -12,6 +12,12 @@
   <body>
   	<div>
   	  <h1>Lucasway DB Migration Testing</h1>
+  	  <h3>Table of Contents</h3>
+  	  <ul>
+  	    <li><a href="#test-case-intro">Test Cases and How They Operate</a></li>
+  	    <li><a href="#test-context">Test Hierarchy Context</a></li>
+  	    <li><a href="#test-run">The Test Process and Impact on Migrations</a></li>
+  	  </ul>
   	  <p>
   	    This guide will show how to build a fixture-driven set of test cases that mirror
   	    your SQL function migration dictionary (directory tree).
@@ -45,7 +51,8 @@
   	    <li>invoke.json</li>
 		<li>expected-results.json</li>
 	  </ul>
-	  <h2>Test Fixtures Explained</h2>
+
+	  <h2 id="test-case-intro">Test Cases and How They Operate</h2>
 	  <p>
 	    In each test case the set up phase establishes a set of data in the test database using
 	    <span class="code">dataset.xml</span> as the definition of table rows; then,
@@ -167,7 +174,8 @@
           [ 1, 7777, "GENERAL_CONSUMER", "General Consumer" ]
         ]
       </p>
-      <h2>Test Hierarchy Context</h2>
+
+      <h2 id="test-context">Test Hierarchy Context</h2>
       <p>
         If you notice files above your test case or even test directories named <span class="code">common-*</span>
         then you are noticing contextual, parent fixture files that provide distributed, common
@@ -193,9 +201,47 @@
       <h3>common-invoke.json</h3>
       <p>
         Just with data sets, if you have common properties in your <span class="code">invoke.json</span>
-        map files you can push them up into distributed map files.  All tests underneath will merge
-        the common properties with their own.
+        map files you can push them up into a distributed map file named <span class="code">common-invoke.json</span>.
+        All tests underneath will merge the common properties with their own.
       </p>
+      <p>
+        Pretend the test cases for <span class="code">get_dataview(..)</span> only specify the
+        arguments.  If you need to specify the table schema, make a <span class="code">common-invoke.json</span>
+        file in the function's test directory that looks like
+      </p>
+      <p class="code">
+        {
+          &quot;schema&quot;: &quot;classification&quot;
+        }
+      </p>
+      <p>
+        The test case will use this config value just as if you specified that schema property
+        in its <span class="code">invoke.json</span>.
+      </p>
+      <p>
+        Properties are overridden similar to how methods and fields are overridden in programming
+        objects: just as sub-classes override a method by specifying the same method as its parent
+        class, if your invoke config specifies the same property as the common config, it overrides
+        the value.
+      </p>
+      <p>So if you specify</p>
+      <p class="code">
+        {
+          &quot;schema&quot;: &quot;public&quot;
+        }
+      </p>
+      <p>
+       in your test cases' <span class="code">invoke.json</span>, &quot;public&quot; will override
+       &quot;classification&quot; as the effective property value for &quot;schema&quot;
+      </p>
+
+      <h2 id="test-run">The Test Process and Impact on Migrations</h2>
+      <ul>
+        <li>The test output will look like a JUnit report of unit tests.</li>
+        <li>Each test case is named with its path relative to the base SQL function directory and appended the scenario name with ::</li>
+        <li>SQL functions are migrated in a separate unit test database, and likewise, the unit tests run on that database</li>
+        <li><b>IMPORTANT:</b> the unit tests run before the real migrations; if at least one test fails, then the real migration are <b>NOT</b> run.</li>
+      </ul>
   	</div>
   </body>
 </html>
