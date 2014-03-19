@@ -30,7 +30,11 @@ public class DirectoryScanUtils
 
 	def static buildAndProcessNodes(File dir, ObjectNode parentNode = null, consumeDir) {
 		def node = new ObjectNode(parentNode, dir.name, consumeDir(dir, parentNode))
-		dir.eachFile(FileType.DIRECTORIES) { subDir -> buildAndProcessNodes(subDir, node, consumeDir) }
+		dir.eachFile(FileType.DIRECTORIES) { subDir ->
+			if (! subDir.name.startsWith('.')) {
+				buildAndProcessNodes(subDir, node, consumeDir)
+			}
+		}
 		return node
 	}
 }

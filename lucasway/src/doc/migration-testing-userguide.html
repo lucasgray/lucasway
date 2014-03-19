@@ -60,7 +60,7 @@
 	    <span class="code">dataset.xml</span> as the definition of table rows; then,
 	    your function is called with arguments defined in
 	    <span class="code">invoke.json</span>; lastly, the result set of the function call
-	    is asserted by matching it against <code class="code">expected-results.json</code>.
+	    is asserted by matching it against <span class="code">expected-results.json</span>.
 	  </p>
 
 	  <h3 class="code-heading">dataset.xml</h3>
@@ -95,9 +95,9 @@
 	  </p>
 	  <p>
 	    Case in point: a function, <span class="code">get_dataview(...)</span>, will
-        have two parameters to it: in a test case called &quot;main&quot; we'll define the
-        arguments to pass in the tested call:
-      </p>
+      have two parameters to it: in a test case called &quot;main&quot; we'll define the
+      arguments to pass in the tested call:
+    </p>
 	  <p class="code">
 	    {
 	      &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
@@ -119,18 +119,18 @@
       </p>
       <p class="code">
         {
-          &quot;callAs&quot;: &quot;classification.getdataview&quot;
+          &quot;callAs&quot;: &quot;classification.getdataview&quot;,
           &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
         }
       </p>
       <p>
-        The test case will actuall invoke <span class="code">classification.getdataview</span> if it sees
-        &quot;callAs&quot; in <span class="code">invoke.json</span>.  Alternatively, if your
-        SQL function file name matches your SQL function name, then you can simply say,
+        The test case will actually invoke <span class="code">classification.getdataview</span>
+        if it sees &quot;callAs&quot; in <span class="code">invoke.json</span>.  Alternatively,
+        if your SQL function file name matches your SQL function name, then you can simply say,
       </p>
       <p class="code">
         {
-          &quot;schema&quot;: &quot;classification&quot;
+          &quot;schema&quot;: &quot;classification&quot;,
           &quot;arguments&quot;: [ 1, &quot;GENERAL_CONSUMER&quot; ]
         }
       </p>
