@@ -4,6 +4,7 @@
     <title>Lucasway DB Migration Testing</title>
     <style type="text/css">
       p.code { padding-left: 10px; margin-left: 8px; border: 1px solid black; background-color: #EEFFEE; }
+      pre.code { padding-left: 5px; margin-left: 8px; border: 1px solid black; background-color: #EEFFEE; }
       ul.code { padding-left: 22px; margin-left: 8px; border: 1px solid black; background-color: #EEFFEE; }
       span.code { font-weight: bold; }
       h3.code-heading { font-weight: bold; }
@@ -16,7 +17,8 @@
   	  <ul>
   	    <li><a href="#test-case-intro">Test Cases and How They Operate</a></li>
   	    <li><a href="#test-context">Test Hierarchy Context</a></li>
-  	    <li><a href="#test-run">The Test Process and Impact on Migrations</a></li>
+  	    <li><a href="#test-run">Running Tests and Their Impact on Migrations</a></li>
+        <li><a href="#integrating">Integrating with Your Migration Project</a></li>
   	  </ul>
   	  <p>
   	    This guide will show how to build a fixture-driven set of test cases that mirror
@@ -182,7 +184,7 @@
         test configuration.
       </p>
 
-      <h3>common-dataset.xml</h3>
+      <h3 class="code-heading">common-dataset.xml</h3>
       <p>
         A suite of tests can have many test cases, so to reduce redundantly specifying a familiar, common
         set of table rows, the test suite directory tree can have base dataset files that
@@ -198,7 +200,7 @@
         &quot;some_common_table_row&quot; and &quot;dataview&quot; for the test, <span class="code">get_dataview</span>.
       </p>
 
-      <h3>common-invoke.json</h3>
+      <h3 class="code-heading">common-invoke.json</h3>
       <p>
         Just with data sets, if you have common properties in your <span class="code">invoke.json</span>
         map files you can push them up into a distributed map file named <span class="code">common-invoke.json</span>.
@@ -235,12 +237,43 @@
        &quot;classification&quot; as the effective property value for &quot;schema&quot;
       </p>
 
-      <h2 id="test-run">The Test Process and Impact on Migrations</h2>
+      <h2 id="test-run">Running Tests and Their Impact on Migrations</h2>
+      <p>
+        Tests are run automatically when you invoke mvn install or gradle lucaswayMigrate.  You can specify
+        <span class="code">-DskipTests</span> to skip tests but only when calling gradle build
+        directly.
+      </p>
+
       <ul>
         <li>The test output will look like a JUnit report of unit tests.</li>
         <li>Each test case is named with its path relative to the base SQL function directory and appended the scenario name with ::</li>
         <li>SQL functions are migrated in a separate unit test database, and likewise, the unit tests run on that database</li>
         <li><b>IMPORTANT:</b> the unit tests run before the real migrations; if at least one test fails, then the real migration are <b>NOT</b> run.</li>
+      </ul>
+
+      <h2 id="integrating">Integrating with Your Migration Project</h2>
+      <p>
+        To integrate unit testing in your DB migration project, in addition to the test structure mentioned so far
+        you will need a 1) <span class="code">migration-jdbc.properties</span> file located at <span class="code">src/test/resources</span>
+        and 2) if you want the capability to skip unit tests, you must edit the gradle skip by adding
+        the following snip to the <span class="code">lucasway { ... }</span> configuration:
+      </p>
+      <pre class="code">
+String skipTestsProperty = System.getProperty('skipTests')
+skipTests = (skipTestsProperty == null ? false
+              : (skipTestsProperty.isEmpty() ? true
+                      : Boolean.valueOf(skipTestsProperty)))
+      </pre>
+      <h3 class="code-heading">src/test/resources/migration-jdbc.properties</h3>
+      <p>
+        This properties file defines the connection parameters to the unit tests database.
+        It has the following properties:
+      </p>
+      <ul class="code">
+        <li><span class="code">url</span> - JDBC Connection URL eg. jdbc:postgresql://localhost:5433/warehouse_test</li>
+        <li><span class="code">driver</span> - JDBC Driver Class Name eg. org.postgresql.Driver</li>
+        <li><span class="code">username</span> - SQL User Name that is making the DB requests</li>
+        <li><span class="code">password</span> - Password of the SQL User</li>
       </ul>
   	</div>
   </body>

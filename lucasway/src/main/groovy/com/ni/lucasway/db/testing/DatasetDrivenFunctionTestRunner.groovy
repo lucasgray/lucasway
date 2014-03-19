@@ -142,7 +142,10 @@ public class DatasetDrivenFunctionTestRunner extends Runner
         if (! functionTests) {
         	scanFunctionTestDirectories()
         }
-
+        println "--------------------------------------------------------"
+		println "Running Unit Tests"
+		println "--------------------------------------------------------"
+		
     	try
     	{
     		dbAccessor = sqlSource()

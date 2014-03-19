@@ -1,0 +1,240 @@
+
+
+***************************************************************************************************
+***************************************************************************************************
+***************************************************************************************************
+********************************* ----- EXAMPLE WALKTHROUGH ----- *********************************
+
+
+
+This is a walkthough of running the Lucasway Migrations.  Included here snippets at a time is
+console output of running migrations.
+***************************************************************************************************
+
+		nI-rsmall:db rsmall$ ./gradlew lucaswayMigrate
+
+***************************************************************************************************
+'lucaswayMigrate' is the task that migrates your DB.
+
+This task requires that unit tests run first (unless of course you invoke -DskipTests[=true]).
+
+You can run mvn install just the same except skipTests is not recognized (it is not passed to
+gradle).
+
+:test appears signalling the unit test task is starting
+***************************************************************************************************
+
+		:test
+
+		--------------------------------------------------------
+		Lucasway: Testing Migrations
+		--------------------------------------------------------
+
+			Test Database Url: jdbc:postgresql://localhost:5433/warehouse_test
+			Test Database Driver: org.postgresql.Driver
+			Test Database Username: test
+			Test SQL File Base: null
+		    ...
+
+***************************************************************************************************
+The full swath of migrations is run on the unit test's database
+***************************************************************************************************
+
+		--------------------------------------------------------
+		Refreshing Functions
+		--------------------------------------------------------
+
+			classified_etl_dataview_fact.sql:null
+			classified_etl_dataview_interest_fact.sql:null
+		    ....
+
+***************************************************************************************************
+Then the test runner commences.  First, test directories are scanned for tests that match th SQL
+functions.
+***************************************************************************************************
+
+		Found test config context: src/test/sql/functions/dashboard/common-dataset.xml
+		Found test config context: src/test/sql/functions/dashboard/get_brand_interest/common-invoke.json
+		Loaded test invoke context: file=src/test/sql/functions/dashboard/get_brand_interest/common-invoke.json; config=[callAs:classification.getbrandinterest]
+		SQL Test Directory: src/test/sql/functions/dashboard/get_brand_interest; functionPath=/dashboard/get_brand_interest; isTest=true; testContext=[dataSet:AbstractDataSet[_orderedTableNameMap=null], invoke:[callAs:classification.getbrandinterest]]
+		Creating Test Case for function=/dashboard/get_brand_interest: testCaseDir=allBrand_interestType
+		Invoke config of testCase: name=/dashboard/get_brand_interest::allBrand_interestType; config=[callAs:classification.getbrandinterest, arguments:[1, allBrand]]
+		Creating Test Case for function=/dashboard/get_brand_interest: testCaseDir=defaultBrand_interestType
+		Invoke config of testCase: name=/dashboard/get_brand_interest::defaultBrand_interestType; config=[callAs:classification.getbrandinterest, arguments:[1]]
+		Creating Test Case for function=/dashboard/get_brand_interest: testCaseDir=relatedBrand_interestType
+		Invoke config of testCase: name=/dashboard/get_brand_interest::relatedBrand_interestType; config=[callAs:classification.getbrandinterest, arguments:[1, relatedBrand]]
+		
+***************************************************************************************************
+After scanning directories for tests and config files and determining the tests to run, the unit
+tests will commence:
+***************************************************************************************************
+
+		--------------------------------------------------------
+		Running Unit Tests
+		--------------------------------------------------------
+
+		Running SQL Function Test Cases: functionName=get_brand_interest; #cases=3
+		Running SQL Function Test Case: testCase=/dashboard/get_brand_interest::allBrand_interestType(com.ni.lucasway.db.testing.DatasetDrivenFunctionTestCase)
+		Running SQL Function Test Case: testCase=/dashboard/get_brand_interest::defaultBrand_interestType(com.ni.lucasway.db.testing.DatasetDrivenFunctionTestCase)
+		Running SQL Function Test Case: testCase=/dashboard/get_brand_interest::relatedBrand_interestType(com.ni.lucasway.db.testing.DatasetDrivenFunctionTestCase)
+
+		Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.855 sec
+
+***************************************************************************************************
+All went well if you see Failures: 0 and Errors: 0.  If at least one unit test failed, you will see
+a large stack trace indicating so.  A failed test looks like:
+***************************************************************************************************
+
+		:lucaswayMigrate
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------
+Lucasway Configuration:
+--------------------------------------------------------
+
+	Database Url: jdbc:postgresql://localhost:5433/warehouse
+	Database Driver: org.postgresql.Driver
+	Database Username: niuser
+	Auditing: false
+	Sql File Base: null
+
+
+--------------------------------------------------------
+Refreshing Functions
+--------------------------------------------------------
+
+	classified_etl_dataview_fact.sql:null
+	classified_etl_dataview_interest_fact.sql:null
+	classified_etl_domain_fact.sql:null
+	classified_etl_domain_interest_fact.sql:null
+	classified_etl_interest_fact.sql:null
+	classified_etl_site_fact.sql:null
+	classified_etl_user_dataview_fact.sql:null
+	classified_etl_user_fact.sql:null
+	classified_etl_user_interest_fact.sql:null
+	classified_etl_user_site_fact.sql:null
+	fact_maint_log_prepop_zero_count_row_addition.sql:null
+	fact_maint_prepop_zero_count_rows_dataview_interest.sql:null
+	materialize_domain_dimension.sql:null
+	materialize_language_dimension.sql:null
+	materialize_site_dimension.sql:null
+	materialize_user_dimension.sql:null
+	get_brand_group_feature_interest.sql:null
+	get_brand_interest.sql:null
+	get_brand_profile_attribute.sql:null
+	get_conversation_trend.sql:null
+	get_conversation_trend_interest.sql:null
+	get_most_changed_attribute.sql:null
+	get_most_changed_brand_health.sql:null
+	get_most_changed_purchase_funnel.sql:null
+	get_net_sentiment.sql:null
+	get_overall_brand_health.sql:null
+	get_share_of_voice.sql:null
+	get_volume_change.sql:null
+	getPurchaseFunnel.sql:null
+	etl_job_finish.sql:null
+	etl_job_start_job.sql:null
+	etl_job_update.sql:null
+	util_create_job_based_partition.sql:null
+	util_get_job_based_partition.sql:null
+	util_create_interval_based_partition.sql:null
+	util_create_job_id_based_partition.sql:null
+	util_create_snapshot_based_partition.sql:null
+	util_get_job_id_based_partition_name.sql:null
+	util_get_snapshot_based_partition_name.sql:null
+	util_safe_divide.sql:null
+
+--------------------------------------------------------
+--------------------------------------------------------
+
+Running classified_etl_dataview_fact.sql because classified_etl_dataview_fact.sql depends on it
+Took: 4ms
+Running classified_etl_dataview_interest_fact.sql because classified_etl_dataview_interest_fact.sql depends on it
+Took: 1ms
+Running classified_etl_domain_fact.sql because classified_etl_domain_fact.sql depends on it
+Took: 1ms
+Running classified_etl_domain_interest_fact.sql because classified_etl_domain_interest_fact.sql depends on it
+Took: 1ms
+Running classified_etl_interest_fact.sql because classified_etl_interest_fact.sql depends on it
+Took: 1ms
+Running classified_etl_site_fact.sql because classified_etl_site_fact.sql depends on it
+Took: 2ms
+Running classified_etl_user_dataview_fact.sql because classified_etl_user_dataview_fact.sql depends on it
+Took: 2ms
+Running classified_etl_user_fact.sql because classified_etl_user_fact.sql depends on it
+Took: 1ms
+Running classified_etl_user_interest_fact.sql because classified_etl_user_interest_fact.sql depends on it
+Took: 1ms
+Running classified_etl_user_site_fact.sql because classified_etl_user_site_fact.sql depends on it
+Took: 2ms
+Running fact_maint_log_prepop_zero_count_row_addition.sql because fact_maint_log_prepop_zero_count_row_addition.sql depends on it
+Took: 1ms
+Running fact_maint_prepop_zero_count_rows_dataview_interest.sql because fact_maint_prepop_zero_count_rows_dataview_interest.sql depends on it
+Took: 2ms
+Running materialize_domain_dimension.sql because materialize_domain_dimension.sql depends on it
+Took: 1ms
+Running materialize_language_dimension.sql because materialize_language_dimension.sql depends on it
+Took: 2ms
+Running materialize_site_dimension.sql because materialize_site_dimension.sql depends on it
+Took: 2ms
+Running materialize_user_dimension.sql because materialize_user_dimension.sql depends on it
+Took: 2ms
+Running get_brand_group_feature_interest.sql because get_brand_group_feature_interest.sql depends on it
+Took: 2ms
+Running get_brand_interest.sql because get_brand_interest.sql depends on it
+Took: 2ms
+Running get_brand_profile_attribute.sql because get_brand_profile_attribute.sql depends on it
+Took: 2ms
+Running get_conversation_trend.sql because get_conversation_trend.sql depends on it
+Took: 2ms
+Running get_conversation_trend_interest.sql because get_conversation_trend_interest.sql depends on it
+Took: 2ms
+Running get_most_changed_attribute.sql because get_most_changed_attribute.sql depends on it
+Took: 4ms
+Running get_most_changed_brand_health.sql because get_most_changed_brand_health.sql depends on it
+Took: 4ms
+Running get_most_changed_purchase_funnel.sql because get_most_changed_purchase_funnel.sql depends on it
+Took: 3ms
+Running get_net_sentiment.sql because get_net_sentiment.sql depends on it
+Took: 3ms
+Running get_overall_brand_health.sql because get_overall_brand_health.sql depends on it
+Took: 4ms
+Running get_share_of_voice.sql because get_share_of_voice.sql depends on it
+Took: 3ms
+Running get_volume_change.sql because get_volume_change.sql depends on it
+Took: 3ms
+Running getPurchaseFunnel.sql because getPurchaseFunnel.sql depends on it
+Took: 3ms
+Running etl_job_finish.sql because etl_job_finish.sql depends on it
+Took: 1ms
+Running etl_job_start_job.sql because etl_job_start_job.sql depends on it
+Took: 2ms
+Running etl_job_update.sql because etl_job_update.sql depends on it
+Took: 1ms
+Running util_create_job_based_partition.sql because util_create_job_based_partition.sql depends on it
+Took: 2ms
+Running util_get_job_based_partition.sql because util_get_job_based_partition.sql depends on it
+Took: 2ms
+Running util_create_interval_based_partition.sql because util_create_interval_based_partition.sql depends on it
+Took: 2ms
+Running util_create_job_id_based_partition.sql because util_create_job_id_based_partition.sql depends on it
+Took: 1ms
+Running util_create_snapshot_based_partition.sql because util_create_snapshot_based_partition.sql depends on it
+Took: 1ms
+Running util_get_job_id_based_partition_name.sql because util_get_job_id_based_partition_name.sql depends on it
+Took: 1ms
+Running util_get_snapshot_based_partition_name.sql because util_get_snapshot_based_partition_name.sql depends on it
+Took: 1ms
+Running util_safe_divide.sql because util_safe_divide.sql depends on it
+Took: 1ms
+
+BUILD SUCCESSFUL
+
+Total time: 15.818 secs
