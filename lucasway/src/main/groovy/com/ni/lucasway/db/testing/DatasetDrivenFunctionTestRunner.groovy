@@ -119,8 +119,10 @@ public class DatasetDrivenFunctionTestRunner extends Runner
 	{
 		def testCases = []
 		functionTestDir.eachDir { testCaseDir ->
-			println "Creating Test Case for function=${functionPath}: testCaseDir=${testCaseDir.name}"
-			testCases += new DatasetDrivenFunctionTestCase("${functionPath}::${testCaseDir.name}", testCaseDir, testContext)
+			if (! testCaseDir.name.startsWith('.')) {
+				println "Creating Test Case for function=${functionPath}: testCaseDir=${testCaseDir.name}"
+				testCases += new DatasetDrivenFunctionTestCase("${functionPath}::${testCaseDir.name}", testCaseDir, testContext)
+			}
 		}
 		return testCases
 	}
