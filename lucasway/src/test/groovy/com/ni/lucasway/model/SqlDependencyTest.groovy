@@ -1,7 +1,7 @@
 package com.ni.lucasway.model;
 
-import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 class SqlDependencyTest {
@@ -53,6 +53,16 @@ class SqlDependencyTest {
 		greatGrandChildOne.name = "GreatGrandChildOne"
 		
 		grandChildOne.children << greatGrandChildOne
+		
+		SqlDependency greatGrandChildTwo = new SqlDependency()
+		greatGrandChildTwo.name = "GreatGrandChildTwo"
+		
+		grandChildTwo.children << greatGrandChildTwo
+		
+		SqlDependency greatGreatGrandChildTwo = new SqlDependency()
+		greatGreatGrandChildTwo.name = "GreatGreatGrandChildTwo"
+		
+		greatGrandChildTwo.children << greatGreatGrandChildTwo
 	}
 	
 	@Test
@@ -61,9 +71,12 @@ class SqlDependencyTest {
 		assert rslt[0].equals("GreatGrandChildOne")
 		assert rslt[1].equals("GrandChildOne")
 		assert rslt[rslt.size()-1].equals("Parent")
+		
+		println rslt
 	}
 	
 	@Test
+	@Ignore
 	void TestDepthFirstClos() {
 		def rslt = parent.depthFirst({it -> it.name = it.name + "Test!" }).collect{it.name}
 		assert rslt[0].equals("GreatGrandChildOneTest!")

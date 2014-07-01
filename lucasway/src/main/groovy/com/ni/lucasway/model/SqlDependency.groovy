@@ -18,7 +18,6 @@ class SqlDependency {
 	
 	List<SqlDependency> depthFirst() {
 		def ret = []
-		children = children.sort{it.children.size}.reverse()
 		children.each {
 			ret.addAll(it.depthFirst())
 		}
@@ -34,9 +33,10 @@ class SqlDependency {
 		println "\t" * indent + name + ":" + version
 		
 		if (children.size() > 0) {
+			def newIndent = indent+1
 			children.each { childNode ->
 				if (childNode != null) {
-					childNode.printMyselfAndChildren(++indent)
+					childNode.printMyselfAndChildren(newIndent)
 				}
 			}
 		}

@@ -14,25 +14,41 @@ import com.ni.lucasway.model.SqlDependency
 class FileParsing {
 	static Logger LOG = LoggerFactory.getLogger(LucaswayPlugin.class)
 	
-	static Map<String,List<SqlDependency>> parseFiles(ConfigurableFileTree fucnts, ConfigurableFileTree tables) {
+	static Map<String,List<SqlDependency>> parseFiles(ConfigurableFileTree functs, ConfigurableFileTree tables) {
+		
+		def migrations = parseMigrations(tables,functs)
+		
+		def functions = parseFunctions(functs)
+		
+		return ["migrations":migrations, "functions":functions] as Map
+	}
+	
+	static List<SqlDependency> parseMigrations(tables,functs) {
 		
 		List<String> metaBuffer = []
 		List<String> sqlBuffer = []
 		
 		List<SqlDependency> migrations = []
-		List<SqlDependency> functions = []
 		
 		tables.each { file ->
-			//bit to flip to indicate we are in a meta block or not
-			boolean inMeta = false
+			
 			file.withReader { reader ->
+				
+				//bit to flip to indicate we are in a meta block or not, set initially to false
+				boolean inMeta = false
+				boolean seenAtLeastOneMeta = false
+				
+				//reset buffers
+				metaBuffer = []
+				sqlBuffer = []
 				
 				reader.eachLine { line ->
 				
 					LOG.debug "Line: ${line}"
 					if (line.trim().matches('^-{2,}$')) {
-						LOG.debug "Boundary found.  Switching context. Current inMeta: ${inMeta}"
+						LOG.debug "Boundary found.  Switching context. Previous inMeta: ${inMeta}"
 						inMeta = !inMeta
+						seenAtLeastOneMeta = true
 						
 						if (metaBuffer.size()>0 && sqlBuffer.size()>0) {
 							migrations << flush(metaBuffer,sqlBuffer)
@@ -42,10 +58,12 @@ class FileParsing {
 						}
 						
 					} else {
-						if (inMeta) {
-							metaBuffer << line
-						} else {
-							sqlBuffer << line
+						if (seenAtLeastOneMeta) {
+							if (inMeta) {
+								metaBuffer << line
+							} else {
+								sqlBuffer << line
+							}
 						}
 					}
 				}
@@ -58,32 +76,8 @@ class FileParsing {
 			}
 		}
 		
-		functions = parseFunctions(fucnts)
-		
-		return ["migrations":migrations, "functions":functions] as Map
+		return migrations
 	}
-	
-	static SqlDependency flush(List<String> metaBuffer, List<String> sqlBuffer) {
-		LOG.info "Flush called"
-		LOG.debug "State of meta buffer: ${metaBuffer}"
-		LOG.debug "State of sql buffer: ${sqlBuffer}"
-		
-		SqlDependency migration = new SqlDependency()
-		migration.isEntity = true
-		migration.sql = sqlBuffer.join("\n")
-		
-		//--V201309140000_CreateTable
-		migration.version = metaBuffer.collect {it.find('^--.?V[\\d]{12}_.*') }.find{it!=null}.find('V[\\d]{12}_.*')
-		migration.version = migration.version.trim()
-		
-		//--entity:dataview
-		migration.name = metaBuffer.collect {it.find('^--.?entity:.*') }.find{it!=null}.find('entity:.*').replaceAll('entity:', '')
-		migration.name = migration.name.trim()
-		
-		migration.childNames = findChildren(metaBuffer.join("\n"))
-		
-		migration
-	 }
 	
 	static List<SqlDependency> parseFunctions(ConfigurableFileTree functs) {
 		
@@ -126,4 +120,26 @@ class FileParsing {
 
 		children
 	}
+	
+	static SqlDependency flush(List<String> metaBuffer, List<String> sqlBuffer) {
+		LOG.info "Flush called"
+		LOG.debug "State of meta buffer: ${metaBuffer}"
+		LOG.debug "State of sql buffer: ${sqlBuffer}"
+		
+		SqlDependency migration = new SqlDependency()
+		migration.isEntity = true
+		migration.sql = sqlBuffer.join("\n")
+		
+		//--V201309140000_CreateTable
+		migration.version = metaBuffer.collect {it.find('^--.?V[\\d]{12}_.*') }.find{it!=null}.find('V[\\d]{12}_.*')
+//		migration.version = migration.version.trim()
+		
+		//--entity:dataview
+		migration.name = metaBuffer.collect {it.find('^--.?entity:.*') }.find{it!=null}.find('entity:.*').replaceAll('entity:', '')
+//		migration.name = migration.name.trim()
+		
+		migration.childNames = findChildren(metaBuffer.join("\n"))
+		
+		migration
+	 }
 }

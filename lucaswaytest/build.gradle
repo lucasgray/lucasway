@@ -1,15 +1,14 @@
 
 apply plugin: 'lucasway-migrations'
-apply plugin: 'java'
 
 buildscript {
     repositories {
+		mavenCentral()
         mavenLocal()
-        mavenCentral()
     }
 
     dependencies {
-        classpath group: 'com.ni', name: 'lucasway', version: '0.0.1-SNAPSHOT'
+        classpath (group: 'com.ni', name: 'lucasway', version: '0.3.0-SNAPSHOT') { transitive = false }
     }
 
 }
@@ -19,6 +18,7 @@ lucasway {
     driver="org.postgresql.Driver"
     username="niuser"
     password="nipass"
+	skipTests = true
     
     auditing=true
 }
